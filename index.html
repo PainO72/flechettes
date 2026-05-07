@@ -496,7 +496,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
     </div>
   </div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 20px 0">
-    <button id="themeBtn" onclick="toggleTheme()" style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:18px;cursor:pointer;line-height:1">☀️</button>
+    <div style="display:flex;gap:6px">
+      <button id="fullscreenBtnSetup" onclick="toggleFullscreen()" style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:18px;cursor:pointer;line-height:1" title="Plein écran">⛶</button>
+      <button id="themeBtn" onclick="toggleTheme()" style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:18px;cursor:pointer;line-height:1">☀️</button>
+    </div>
     <div class="sync-badge" id="syncBadge" onclick="openSyncScreen()">
       <span class="sb-dot"></span><span id="syncBadgeLabel">Non synchronisé</span>
     </div>
@@ -566,7 +569,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
   <div class="top-bar">
     <button class="back-btn" onclick="backToSetup()">←</button>
     <div class="game-badge" id="modeBadge"></div>
-    <button id="themeBtnGame" onclick="toggleTheme()" style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 10px;font-size:16px;cursor:pointer;line-height:1">☀️</button>
+    <div style="display:flex;gap:6px">
+      <button id="fullscreenBtn" onclick="toggleFullscreen()" style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 10px;font-size:16px;cursor:pointer;line-height:1" title="Plein écran">⛶</button>
+      <button id="themeBtnGame" onclick="toggleTheme()" style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 10px;font-size:16px;cursor:pointer;line-height:1">☀️</button>
+    </div>
   </div>
   <div class="scoreboard" id="scoreboard"></div>
   <div class="checkout-box" id="checkoutBox">
@@ -674,8 +680,14 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 const CHECKOUTS={170:["T20 T20 Bull"],167:["T20 T19 Bull"],164:["T20 T18 Bull"],161:["T20 T17 Bull"],160:["T20 T20 D20"],158:["T20 T20 D19"],157:["T20 T19 D20"],156:["T20 T20 D18"],155:["T20 T19 D19"],154:["T20 T18 D20"],153:["T20 T19 D18"],152:["T20 T20 D16"],151:["T20 T19 D17"],150:["T20 T18 D18"],149:["T20 T19 D16"],148:["T20 T20 D14"],147:["T20 T17 D18"],146:["T20 T18 D16"],145:["T20 T15 D20"],144:["T20 T20 D12"],143:["T20 T17 D16"],142:["T20 T14 D20"],141:["T20 T15 D18"],140:["T20 T20 D10"],139:["T20 T19 D11"],138:["T20 T18 D12"],137:["T20 T19 D10"],136:["T20 T20 D8"],135:["T20 T17 D12"],134:["T20 T14 D16"],133:["T20 T19 D8"],132:["T20 T16 D12"],131:["T20 T13 D16"],130:["T20 T18 D8"],129:["T20 T19 D6"],128:["T20 T16 D10"],127:["T20 T17 D8"],126:["T20 T16 D9"],125:["T20 T15 D10"],124:["T20 T16 D8"],123:["T20 T13 D12"],122:["T18 T18 D7"],121:["T20 T11 D14"],120:["T20 S20 D20"],119:["T19 T12 D13"],118:["T20 S18 D20"],117:["T20 S17 D20"],116:["T20 S16 D20"],115:["T20 S15 D20"],114:["T20 S14 D20"],113:["T20 S13 D20"],112:["T20 S12 D20"],111:["T20 S11 D20"],110:["T20 S10 D20"],109:["T20 S9 D20"],108:["T20 S8 D20"],107:["T20 S7 D20"],106:["T20 S6 D20"],105:["T20 S5 D20"],104:["T20 S4 D20"],103:["T20 S3 D20"],102:["T20 S2 D20"],101:["T20 S1 D20"],100:["T20 D20"],99:["T19 S10 D16"],98:["T20 D19"],97:["T19 D20"],96:["T20 D18"],95:["T19 D19"],94:["T18 D20"],93:["T19 D18"],92:["T20 D16"],91:["T17 D20"],90:["T18 D18","T20 D15"],89:["T19 D16"],88:["T20 D14","T16 D20"],87:["T17 D18","T19 D15"],86:["T18 D16"],85:["T15 D20","T19 D14"],84:["T20 D12","T16 D18"],83:["T17 D16"],82:["T14 D20","T18 D14"],81:["T19 D12"],80:["T20 D10","T16 D16"],79:["T13 D20"],78:["T18 D12"],77:["T19 D10"],76:["T20 D8"],75:["T17 D12"],74:["T14 D16"],73:["T19 D8"],72:["T16 D12"],71:["T13 D16"],70:["T18 D8","T10 D20"],69:["T19 D6"],68:["T20 D4"],67:["T17 D8"],66:["T10 D18"],65:["T19 D4"],64:["T16 D8"],63:["T13 D12"],62:["T10 D16"],61:["T15 D8"],60:["S20 D20"],59:["S19 D20"],58:["S18 D20"],57:["S17 D20"],56:["S16 D20"],55:["S15 D20"],54:["S14 D20"],53:["S13 D20"],52:["S12 D20"],51:["S11 D20"],50:["Bull","S10 D20"],49:["S9 D20"],48:["S16 D16"],47:["S15 D16"],46:["S6 D20"],45:["S13 D16"],44:["S12 D16"],43:["S11 D16"],42:["S10 D16"],41:["S9 D16"],40:["D20"],39:["S7 D16"],38:["D19"],37:["S5 D16"],36:["D18"],35:["S3 D16"],34:["D17"],33:["S1 D16"],32:["D16"],31:["S15 D8"],30:["D15"],29:["S13 D8"],28:["D14"],27:["S11 D8"],26:["D13"],25:["S9 D8"],24:["D12"],23:["S7 D8"],22:["D11"],21:["S5 D8"],20:["D10"],18:["D9"],16:["D8"],14:["D7"],12:["D6"],10:["D5"],8:["D4"],6:["D3"],4:["D2"],2:["D1"]};
 
 function getCheckout(score,fin){
-  if(score>170||score<2)return[];
-  if(fin==='simple'){if(score<=20)return['S'+score];if(score===25)return['Bull 25'];if(score===50)return['Bull 50'];}
+  if(score>170||score<1)return[];
+  if(fin==='simple'){
+    if(score===1)return['S1'];
+    if(score<=20)return['S'+score];
+    if(score===25)return['Bull 25'];
+    if(score===50)return['Bull 50'];
+  }
+  if(score<2)return[]; // double/master : min 2 pour D1
   return CHECKOUTS[score]?CHECKOUTS[score].slice(0,3):[];
 }
 
@@ -850,12 +862,19 @@ function recordThrowStat(playerName, label, pts){
   p.totalDarts=(p.totalDarts||0)+1;
   p.totalPoints=(p.totalPoints||0)+pts;
   p.realPoints=(p.realPoints||0)+pts; // points réels touchés (jamais annulés)
-  let num=null;
-  if(label==='Bull 25')num='bull';
-  else if(label==='Bull 50')num='dbull';
-  else if(label==='Raté')num='miss';
-  else{const m=label.match(/[DTS]?(\d+)/);if(m)num=parseInt(m[1]);}
-  if(num!==null){if(!p.numberHits)p.numberHits={};p.numberHits[num]=(p.numberHits[num]||0)+1;}
+  // Clé complète : D20, T20, S5, bull, dbull, miss
+  let hitKey=null;
+  if(label==='Bull 25')hitKey='bull';
+  else if(label==='Bull 50')hitKey='dbull';
+  else if(label==='Raté')hitKey='miss';
+  else{
+    const m=label.match(/^([DTS]?)(\d+)/);
+    if(m){
+      const pfx=m[1]||'S'; // pas de préfixe = Simple
+      hitKey=pfx+m[2];     // ex: D20, T20, S5
+    }
+  }
+  if(hitKey!==null){if(!p.numberHits)p.numberHits={};p.numberHits[hitKey]=(p.numberHits[hitKey]||0)+1;}
   saveStats(s); // async fire-and-forget
 }
 function recordTurnStat(playerName, turnTotal){
@@ -1445,7 +1464,9 @@ function endTurn(){
   const lastT=gs.throws[gs.throws.length-1];
   const pName=curPlayerName();
 
-  if(newScore<0||newScore===1){
+  // Score négatif = bust toujours
+  // Score = 1 = bust seulement en mode double/master (impossible de finir sur S1)
+  if(newScore<0||(newScore===1&&gs.fin!=='simple')){
     flash('Bust ! Score inchangé → '+curScore(),'err');
     setTimeout(nextTurn,1800);return;
   }
@@ -1677,6 +1698,27 @@ function renderStats(){
 
   // top numéros touchés
   const hits=p.numberHits||{};
+  // Calculer les points réels de chaque clé pour le tri
+  function hitPts(key){
+    if(key==='bull')return 25;
+    if(key==='dbull')return 50;
+    const m=key.match(/^([DTS]?)(\d+)$/);
+    if(!m)return 0;
+    const mult=m[1]==='D'?2:m[1]==='T'?3:1;
+    return mult*parseInt(m[2]);
+  }
+  function hitLabel(key){
+    if(key==='bull')return 'B25';
+    if(key==='dbull')return 'B50';
+    return key; // D20, T20, S5, etc.
+  }
+  function hitColor(key){
+    if(key.startsWith('T'))return'#e85447'; // rouge pour triple
+    if(key.startsWith('D'))return'#4799e8'; // bleu pour double
+    if(key==='dbull')return'#f0c93a';       // doré pour bull 50
+    if(key==='bull')return'#e8c547';        // jaune pour bull 25
+    return'var(--accent)';                  // doré pour simple
+  }
   const hitEntries=Object.entries(hits)
     .filter(([k])=>k!=='miss')
     .sort((a,b)=>b[1]-a[1])
@@ -1692,11 +1734,12 @@ function renderStats(){
     ${!isTeamStat?`<div class="stat-card full" style="border-color:rgba(240,201,58,.3)"><div class="sc-label">🏆 Meilleure volée</div><div class="sc-val" style="color:var(--accent)">${p.bestTurn||'—'}</div><div class="sc-sub">points en un tour</div></div>`:''}`;
 
   if(hitEntries.length){
-    html+=`<div class="stat-card full"><div class="sc-label">Top numéros touchés</div><div class="bar-chart">`;
-    hitEntries.forEach(([num,count])=>{
-      const lbl=num==='bull'?'B25':num==='dbull'?'B50':num;
+    html+=`<div class="stat-card full"><div class="sc-label">Top zones touchées</div><div class="bar-chart">`;
+    hitEntries.forEach(([key,count])=>{
+      const lbl=hitLabel(key);
+      const col=hitColor(key);
       const pct=Math.round(count/maxHit*100);
-      html+=`<div class="bar-row"><span class="bar-lbl">${lbl}</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div><span class="bar-count">${count}</span></div>`;
+      html+=`<div class="bar-row"><span class="bar-lbl" style="color:${col}">${lbl}</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${col}"></div></div><span class="bar-count">${count}</span></div>`;
     });
     html+=`</div></div>`;
   }
@@ -1730,7 +1773,7 @@ function renderStats(){
       // top zone
       const mHits  = mp.numberHits||{};
       const mTopEntry = Object.entries(mHits).filter(([k])=>k!=='miss').sort((a,b)=>b[1]-a[1])[0];
-      const mTop   = mTopEntry ? (mTopEntry[0]==='bull'?'Bull 25':mTopEntry[0]==='dbull'?'Bull 50':mTopEntry[0]) : '—';
+      const mTop = mTopEntry ? (mTopEntry[0]==='bull'?'B25':mTopEntry[0]==='dbull'?'B50':mTopEntry[0]) : '—';
       html+=`<div class="stat-card">
         <div class="sc-label" style="color:var(--accent);font-size:11px;margin-bottom:8px">● ${memberName}</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
@@ -1817,6 +1860,35 @@ function launchConfetti(){
 // ══════════════════════════════════════════════════════
 // THÈME CLAIR / SOMBRE
 // ══════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
+// PLEIN ÉCRAN
+// ══════════════════════════════════════════════════════
+function toggleFullscreen(){
+  if(!document.fullscreenElement && !document.webkitFullscreenElement){
+    // Entrer en plein écran
+    const el = document.documentElement;
+    if(el.requestFullscreen) el.requestFullscreen().catch(()=>{});
+    else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+  } else {
+    // Quitter le plein écran
+    if(document.exitFullscreen) document.exitFullscreen().catch(()=>{});
+    else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
+  }
+}
+
+function updateFullscreenBtns(){
+  const isFs=!!(document.fullscreenElement||document.webkitFullscreenElement);
+  const icon = isFs ? '⛿' : '⛶';
+  ['fullscreenBtn','fullscreenBtnSetup'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.textContent=icon;
+  });
+}
+
+// Écouter les changements de plein écran (bouton retour, etc.)
+document.addEventListener('fullscreenchange', updateFullscreenBtns);
+document.addEventListener('webkitfullscreenchange', updateFullscreenBtns);
+
 function updateThemeBtns(isLight){
   const icon=isLight?'🌙':'☀️';
   ['themeBtn','themeBtnGame'].forEach(id=>{
@@ -1911,16 +1983,6 @@ function restoreGameState(){
     },100);
   }
 })();
-
-// Plein écran sur Android au premier tap
-document.addEventListener('click', function tryFullscreen(){
-  if(document.documentElement.requestFullscreen){
-    document.documentElement.requestFullscreen().catch(()=>{});
-  } else if(document.documentElement.webkitRequestFullscreen){
-    document.documentElement.webkitRequestFullscreen();
-  }
-  document.removeEventListener('click', tryFullscreen);
-}, {once: true});
 
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{
