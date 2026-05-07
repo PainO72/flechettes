@@ -4,9 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#0f0f0f">
+<meta name="theme-color" content="#0a0a0c">
+<meta name="apple-touch-fullscreen" content="yes">
 <link rel="manifest" href="manifest.json">
 <!-- Firebase SDK (compat) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -594,6 +595,13 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 
 <!-- ══════════════ STATS PAGE ══════════════ -->
 <div class="page" id="stats-page">
+  <div id="resume-bar-stats" style="display:none;align-items:center;justify-content:space-between;gap:10px;margin:12px 20px 0;padding:12px 16px;background:rgba(62,207,122,.1);border:1px solid rgba(62,207,122,.3);border-radius:14px">
+    <div>
+      <div style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--green)">Partie en cours</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">Appuie pour reprendre</div>
+    </div>
+    <button onclick="resumeGame()" style="padding:9px 16px;background:var(--green);border:none;border-radius:10px;font-family:var(--mono);font-size:13px;font-weight:700;color:#0a0a0c;cursor:pointer">▶ Reprendre</button>
+  </div>
   <div class="stats-header">
     <h2>📊 Statistiques</h2>
     <button class="clear-btn" onclick="clearStats()">Effacer</button>
@@ -833,7 +841,7 @@ function getPlayerStats(name){
   if(!s[name])s[name]={games:0,wins:0,totalDarts:0,closingDarts:[],numberHits:{},turns:0,totalPoints:0};
   return s;
 }
-function emptyPlayer(){return{games:0,wins:0,totalDarts:0,closingDarts:[],numberHits:{},turns:0,totalPoints:0,bestTurn:0};}
+function emptyPlayer(){return{games:0,wins:0,totalDarts:0,closingDarts:[],numberHits:{},turns:0,totalPoints:0,realPoints:0,bestTurn:0};}
 
 function recordThrowStat(playerName, label, pts){
   const s=loadStatsLocal();
@@ -841,6 +849,7 @@ function recordThrowStat(playerName, label, pts){
   const p=s[playerName];
   p.totalDarts=(p.totalDarts||0)+1;
   p.totalPoints=(p.totalPoints||0)+pts;
+  p.realPoints=(p.realPoints||0)+pts; // points réels touchés (jamais annulés)
   let num=null;
   if(label==='Bull 25')num='bull';
   else if(label==='Bull 50')num='dbull';
@@ -898,17 +907,26 @@ function navTo(page){
   if(page==='game'){
     target.style.display='flex';
   } else {
-    target.style.display=''; // laisser le CSS .page.active gérer
+    target.style.display='';
     target.classList.add('active');
   }
   const navBtn=document.getElementById('nav-'+page);
   if(navBtn)navBtn.classList.add('active');
   currentPage=page;
-  if(page==='stats')renderStats();
+  if(page==='stats'){renderStats(); updateResumeBar();}
+  if(page==='setup'){updateResumeBar();}
   window.scrollTo(0,0);
+}
+
+function updateResumeBar(){
+  const bar=document.getElementById('resume-bar');
+  if(bar) bar.style.display=gameActive?'flex':'none';
+  const barStats=document.getElementById('resume-bar-stats');
+  if(barStats) barStats.style.display=gameActive?'flex':'none';
 }
 function backToSetup(force=false){
   document.getElementById('win-screen').style.display='none';
+  document.querySelector('.bottom-nav').style.display='';
   // Si partie en cours et pas forcé → demander confirmation
   if(gameActive && !force && document.getElementById('win-screen').style.display==='none'){
     showResumeBar();
@@ -917,6 +935,7 @@ function backToSetup(force=false){
     return;
   }
   gameActive=false;
+  clearGameState();
   document.getElementById('game-page').style.display='none';
   hideResumeBar();
   navTo('setup');
@@ -935,6 +954,7 @@ function resumeGame(){
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   currentPage='game';
   window.scrollTo(0,0);
+  renderGame();
 }
 
 // ══════════════════════════════════════════════════════
@@ -1184,6 +1204,7 @@ function startGame(){
       cur:0,throws:[],mult:1,finishOrder:[]};
   }
   gameActive=true;
+  gs.turnHistory=[];
   navTo('game');
   renderGame();
 }
@@ -1312,7 +1333,6 @@ function addThrow(n){
     applyScore(0);
     if(gs.isTeam){gs.teams[gs.curTeam].legs++;recordFinish(gs.curTeam);}
     else{gs.players[gs.cur].legs++;recordFinish(gs.cur);}
-    // stats fin de partie : victoire seulement pour le 1er arrivé
     const isWinner=gs.finishOrder.length===1;
     const statName=gs.isTeam?gs.teams[gs.curTeam].name:pName;
     const dartCount=gs.isTeam?gs.teams[gs.curTeam].dartsThisGame:gs.players[gs.cur].dartsThisGame;
@@ -1322,32 +1342,94 @@ function addThrow(n){
     setTimeout(handleRoundEnd,120);
     return;
   }
+  // Bust immédiat si score négatif (même en cours de volée)
+  // Note : score===1 est géré en fin de tour (bust seulement en mode double/master)
+  if(newScore<0){
+    flash('Bust ! Score inchangé → '+curScore(),'err');
+    // Bust : annuler totalPoints mais garder realPoints (points réellement touchés)
+    // et garder numberHits (zones touchées réelles)
+    gs.throws.forEach(t=>{
+      const s=loadStatsLocal();
+      if(s[pName]){
+        s[pName].totalPoints=Math.max(0,(s[pName].totalPoints||0)-t.pts);
+        // realPoints et numberHits restent : la fléchette a bien touché ces zones
+        saveStats(s);
+      }
+    });
+    // Annuler les darts comptés
+    const nDarts=gs.throws.length;
+    if(gs.isTeam)gs.teams[gs.curTeam].dartsThisGame=Math.max(0,(gs.teams[gs.curTeam].dartsThisGame||nDarts)-nDarts);
+    else gs.players[gs.cur].dartsThisGame=Math.max(0,(gs.players[gs.cur].dartsThisGame||nDarts)-nDarts);
+    setTimeout(nextTurn,1800);
+    return;
+  }
+  saveGameState();
   renderGame();
   if(gs.throws.length===3)endTurn();
 }
 
+function undoStatThrow(pName, t){
+  // Annule la stat d'un lancer
+  const s=loadStatsLocal();
+  if(s[pName]){
+    s[pName].totalDarts=Math.max(0,(s[pName].totalDarts||1)-1);
+    s[pName].totalPoints=Math.max(0,(s[pName].totalPoints||0)-t.pts);
+    s[pName].realPoints=Math.max(0,(s[pName].realPoints||0)-t.pts);
+    let num=null;
+    if(t.label==='Bull 25')num='bull';
+    else if(t.label==='Bull 50')num='dbull';
+    else if(t.label==='Raté')num='miss';
+    else{const m=t.label.match(/[DTS]?(\d+)/);if(m)num=parseInt(m[1]);}
+    if(num!==null&&s[pName].numberHits&&s[pName].numberHits[num]>0)s[pName].numberHits[num]--;
+    saveStats(s);
+  }
+}
+
 function undoThrow(){
   if(gs.throws.length>0){
-    // annuler la stat du dernier lancer
+    // Annuler le dernier lancer du joueur courant
     const t=gs.throws[gs.throws.length-1];
     const pName=curPlayerName();
-    // décrémenter
-    const s=loadStatsLocal();
-    if(s[pName]){
-      s[pName].totalDarts=Math.max(0,(s[pName].totalDarts||1)-1);
-      s[pName].totalPoints=Math.max(0,(s[pName].totalPoints||0)-t.pts);
-      let num=null;
-      if(t.label==='Bull 25')num='bull';
-      else if(t.label==='Bull 50')num='dbull';
-      else if(t.label==='Raté')num='miss';
-      else{const m=t.label.match(/[DTS]?(\d+)/);if(m)num=parseInt(m[1]);}
-      if(num!==null&&s[pName].numberHits&&s[pName].numberHits[num]>0)s[pName].numberHits[num]--;
-      saveStats(s);
-    }
+    undoStatThrow(pName,t);
     if(gs.isTeam)gs.teams[gs.curTeam].dartsThisGame=Math.max(0,(gs.teams[gs.curTeam].dartsThisGame||1)-1);
     else gs.players[gs.cur].dartsThisGame=Math.max(0,(gs.players[gs.cur].dartsThisGame||1)-1);
     gs.throws.pop();setMult(1);renderGame();
+  } else {
+    // Pas de lancer en cours → revenir au joueur précédent
+    undoPreviousTurn();
   }
+}
+
+function undoPreviousTurn(){
+  if(!gs.turnHistory||!gs.turnHistory.length){
+    flash('Impossible de revenir plus en arrière','err');
+    return;
+  }
+
+  // Restaurer le dernier tour sauvegardé
+  const lastTurn=gs.turnHistory.pop();
+
+  // Revenir au joueur/équipe du tour précédent
+  if(gs.isTeam) gs.curTeam=lastTurn.playerIdx;
+  else gs.cur=lastTurn.playerIdx;
+
+  // Restaurer le score AVANT ce tour
+  if(gs.isTeam) gs.teams[lastTurn.playerIdx].score=lastTurn.scoreBefore;
+  else gs.players[lastTurn.playerIdx].score=lastTurn.scoreBefore;
+
+  // Annuler les stats des lancers du tour précédent
+  const prevName=lastTurn.playerName;
+  lastTurn.throws.forEach(t=>{
+    undoStatThrow(prevName,t);
+    if(gs.isTeam)gs.teams[gs.curTeam].dartsThisGame=Math.max(0,(gs.teams[gs.curTeam].dartsThisGame||1)-1);
+    else gs.players[gs.cur].dartsThisGame=Math.max(0,(gs.players[gs.cur].dartsThisGame||1)-1);
+  });
+
+  // Remettre les 3 lancers dans gs.throws pour que le joueur puisse les voir et les modifier
+  gs.throws=[...lastTurn.throws];
+  setMult(1);
+  flash('Retour au tour de '+prevName,'ok',1500);
+  renderGame();
 }
 
 function flash(msg,type,dur=1800){
@@ -1386,6 +1468,19 @@ function endTurn(){
 }
 
 function nextTurn(){
+  // Sauvegarder le tour dans l'historique pour permettre le retour arrière
+  const pName=curPlayerName();
+  const scoreBefore=gs.isTeam?gs.teams[gs.curTeam].score:gs.players[gs.cur].score;
+  gs.turnHistory=gs.turnHistory||[];
+  gs.turnHistory.push({
+    playerIdx:gs.isTeam?gs.curTeam:gs.cur,
+    playerName:pName,
+    scoreBefore:scoreBefore+(gs.throws.reduce((s,t)=>s+t.pts,0)), // score avant ce tour
+    throws:[...gs.throws]
+  });
+  // Garder max 10 tours en historique
+  if(gs.turnHistory.length>10) gs.turnHistory.shift();
+  saveGameState();
   gs.throws=[];gs.mult=1;
   if(gs.isTeam){
     const ct=gs.teams[gs.curTeam];ct.memberIdx=(ct.memberIdx+1)%ct.members.length;
@@ -1416,6 +1511,7 @@ function handleRoundEnd(){
   const wLegs=gs.isTeam?gs.teams[wi].legs:gs.players[wi].legs;
 
   document.getElementById('win-screen').style.display='flex';
+  document.querySelector('.bottom-nav').style.display='none';
   setTimeout(launchConfetti,80);
   document.getElementById('winTitle').textContent=wName+' remporte la manche !';
   document.getElementById('winSub').textContent=wLegs+' manche'+(wLegs!==1?'s':'')+' gagnée'+(wLegs!==1?'s':'');
@@ -1436,6 +1532,7 @@ function showFinalRanking(){
   const wName=gs.isTeam?gs.teams[wi].name:gs.players[wi].name;
   const wLegs=gs.isTeam?gs.teams[wi].legs:gs.players[wi].legs;
   document.getElementById('win-screen').style.display='flex';
+  document.querySelector('.bottom-nav').style.display='none';
   document.getElementById('winTitle').textContent=multi?(wName+' remporte la manche !'):'Partie terminée !';
   document.getElementById('winSub').textContent=multi?'Classement final':(wLegs+' manche'+(wLegs!==1?'s':'')+' gagnée'+(wLegs!==1?'s':''));
   document.getElementById('continueBtn').style.display='none';
@@ -1470,7 +1567,7 @@ function renderWinGameStats(){
       const pl=gs.players.find(p=>p.name===name);
       if(pl)dartsGame=pl.dartsThisGame||0;
     }
-    const avgPD=p.totalDarts?Math.round(p.totalPoints/p.totalDarts*10)/10:0;
+    const avgPD=p.totalDarts?Math.round((p.realPoints||p.totalPoints||0)/p.totalDarts*10)/10:0;
     const closes=p.closingDarts||[];
     const avgClose=closes.length?Math.round(closes.reduce((a,b)=>a+b,0)/closes.length):null;
     html+=`<div class="wgs-card">
@@ -1512,6 +1609,7 @@ function renderWinTable(){
 }
 
 function continueRound(){
+  document.querySelector('.bottom-nav').style.display='';
   gs.throws=[];gs.mult=1;
   if(gs.isTeam){
     let next=(gs.curTeam+1)%gs.teams.length,loops=0;
@@ -1529,6 +1627,9 @@ function continueRound(){
 }
 
 function replayGame(){
+  clearGameState();
+  document.getElementById('win-screen').style.display='none';
+  document.querySelector('.bottom-nav').style.display='';
   if(gs.isTeam)gs.teams.forEach(t=>{t.score=gs.mode;t.finishRank=null;t.memberIdx=0;t.dartsThisGame=0;});
   else gs.players.forEach(p=>{p.score=gs.mode;p.finishRank=null;p.dartsThisGame=0;});
   if(gs.isTeam)gs.curTeam=0;else gs.cur=0;
@@ -1570,7 +1671,8 @@ function renderStats(){
   const avgClose=closingDarts.length?Math.round(closingDarts.reduce((a,b)=>a+b,0)/closingDarts.length):null;
   const turns=p.turns||0;
   const totalPoints=p.totalPoints||0;
-  const avgPerDart=totalDarts?Math.round(totalPoints/totalDarts*10)/10:0;
+  const realPoints=p.realPoints||0;
+  const avgPerDart=totalDarts?Math.round(realPoints/totalDarts*10)/10:0;
   const winRate=games?Math.round(wins/games*100):0;
 
   // top numéros touchés
@@ -1739,6 +1841,50 @@ function toggleTheme(){
   }
 })();
 
+// ══════════════════════════════════════════════════════
+// PERSISTANCE DE LA PARTIE EN COURS
+// ══════════════════════════════════════════════════════
+function saveGameState(){
+  if(!gameActive||!gs||!gs.players&&!gs.teams)return;
+  try{
+    // Ne pas sauvegarder turnHistory (trop lourd) ni les fonctions
+    const toSave={
+      mode:gs.mode,fin:gs.fin,isTeam:gs.isTeam,ppt:gs.ppt,
+      cur:gs.cur,curTeam:gs.curTeam,
+      throws:gs.throws,mult:gs.mult,
+      finishOrder:gs.finishOrder,
+    };
+    if(gs.isTeam){
+      toSave.teams=gs.teams.map(t=>({
+        name:t.name,color:t.color,members:t.members,
+        score:t.score,legs:t.legs,finishRank:t.finishRank,
+        memberIdx:t.memberIdx,dartsThisGame:t.dartsThisGame
+      }));
+    } else {
+      toSave.players=gs.players.map(p=>({
+        name:p.name,score:p.score,legs:p.legs,
+        finishRank:p.finishRank,dartsThisGame:p.dartsThisGame
+      }));
+    }
+    localStorage.setItem('fl_game_state',JSON.stringify(toSave));
+  }catch(e){}
+}
+
+function clearGameState(){
+  localStorage.removeItem('fl_game_state');
+}
+
+function restoreGameState(){
+  try{
+    const saved=localStorage.getItem('fl_game_state');
+    if(!saved)return false;
+    const s=JSON.parse(saved);
+    gs={...s,turnHistory:[]};
+    gameActive=true;
+    return true;
+  }catch(e){return false;}
+}
+
 // ── Init sync au démarrage ──
 (async function initSync(){
   const savedCode = localStorage.getItem('fl_sync_code');
@@ -1754,6 +1900,27 @@ function toggleTheme(){
     }
   }
 })();
+
+// Restaurer la partie en cours si l'app a été fermée pendant une partie
+(function initRestoreGame(){
+  if(restoreGameState()){
+    // Partie sauvegardée trouvée → montrer le bouton reprendre
+    setTimeout(()=>{
+      showResumeBar();
+      updateResumeBar();
+    },100);
+  }
+})();
+
+// Plein écran sur Android au premier tap
+document.addEventListener('click', function tryFullscreen(){
+  if(document.documentElement.requestFullscreen){
+    document.documentElement.requestFullscreen().catch(()=>{});
+  } else if(document.documentElement.webkitRequestFullscreen){
+    document.documentElement.webkitRequestFullscreen();
+  }
+  document.removeEventListener('click', tryFullscreen);
+}, {once: true});
 
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{
