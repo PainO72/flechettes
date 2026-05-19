@@ -681,14 +681,82 @@ const CHECKOUTS={170:["T20 T20 Bull"],167:["T20 T19 Bull"],164:["T20 T18 Bull"],
 
 function getCheckout(score,fin){
   if(score>170||score<1)return[];
+
   if(fin==='simple'){
-    if(score===1)return['S1'];
-    if(score<=20)return['S'+score];
-    if(score===25)return['Bull 25'];
-    if(score===50)return['Bull 50'];
+    const hints=[];
+
+    // Zones disponibles triées par valeur décroissante
+    const ZONES=[];
+    for(let i=20;i>=1;i--){
+      ZONES.push([i*3,'T'+i]);
+      ZONES.push([i*2,'D'+i]);
+      ZONES.push([i,'S'+i]);
+    }
+    ZONES.push([50,'Bull 50'],[25,'Bull']);
+
+    // Conseil 1 : le plus RAPIDE (moins de fléchettes, valeurs max)
+    // 1 fléchette
+    for(const [v,l] of ZONES){ if(v===score){hints.push(l);break;} }
+    // 2 fléchettes (si pas trouvé en 1)
+    if(hints.length===0){
+      outer: for(const [v1,l1] of ZONES){
+        if(v1>=score) continue;
+        for(const [v2,l2] of ZONES){
+          if(v2===score-v1){hints.push(l1+' '+l2);break outer;}
+        }
+      }
+    }
+    // 3 fléchettes
+    if(hints.length===0){
+      outer3: for(const [v1,l1] of ZONES){
+        if(v1>=score) continue;
+        for(const [v2,l2] of ZONES){
+          if(v2>=score-v1) continue;
+          for(const [v3,l3] of ZONES){
+            if(v3===score-v1-v2){hints.push(l1+' '+l2+' '+l3);break outer3;}
+          }
+        }
+      }
+    }
+
+    // Conseil 2 : le plus SIMPLE (simples uniquement, S20 en priorité)
+    const simpleZones=[];
+    for(let i=20;i>=1;i--) simpleZones.push([i,'S'+i]);
+    simpleZones.push([25,'Bull'],[50,'Bull 50']);
+
+    let simple2='';
+    // 1 fléchette simple
+    for(const [v,l] of simpleZones){ if(v===score){simple2=l;break;} }
+    // 2 fléchettes simples
+    if(!simple2){
+      outer2: for(const [v1,l1] of simpleZones){
+        if(v1>=score) continue;
+        for(const [v2,l2] of simpleZones){
+          if(v2===score-v1){simple2=l1+' '+l2;break outer2;}
+        }
+      }
+    }
+    // 3 fléchettes simples
+    if(!simple2){
+      outer3s: for(const [v1,l1] of simpleZones){
+        if(v1>=score) continue;
+        for(const [v2,l2] of simpleZones){
+          if(v2>=score-v1) continue;
+          for(const [v3,l3] of simpleZones){
+            if(v3===score-v1-v2){simple2=l1+' '+l2+' '+l3;break outer3s;}
+          }
+        }
+      }
+    }
+
+    // Ajouter le conseil simple seulement s'il est différent du 1er
+    if(simple2 && simple2!==hints[0]) hints.push(simple2);
+
+    return hints.slice(0,2);
   }
-  if(score<2)return[]; // double/master : min 2 pour D1
-  return CHECKOUTS[score]?CHECKOUTS[score].slice(0,3):[];
+
+  if(score<2)return[];
+  return CHECKOUTS[score]?CHECKOUTS[score].slice(0,2):[];
 }
 
 // ══════════════════════════════════════════════════════
@@ -701,9 +769,9 @@ const TNAMES=['Équipe A','Équipe B','Équipe C','Équipe D'];
 // FIREBASE CONFIG
 // ══════════════════════════════════════════════════════
 const FIREBASE_CFG = {
-  apiKey: "AIzaSyDjBwqUnR7B3u1OfCWykdhA7wRGTq6J6Tc",
-  authDomain: "flechettes-d6ac1.firebaseapp.com",
-  projectId: "flechettes-d6ac1"
+  apiKey: "AIzaSyDemo-RemplacezParVotreCle",
+  authDomain: "flechettes-demo.firebaseapp.com",
+  projectId: "flechettes-demo"
 };
 // ⚠️ Ces valeurs DOIVENT être remplacées par les vôtres (voir INSTALLATION.md)
 // Tant qu'elles ne sont pas configurées, l'app fonctionne en local uniquement.
@@ -853,7 +921,7 @@ function getPlayerStats(name){
   if(!s[name])s[name]={games:0,wins:0,totalDarts:0,closingDarts:[],numberHits:{},turns:0,totalPoints:0};
   return s;
 }
-function emptyPlayer(){return{games:0,wins:0,totalDarts:0,closingDarts:[],numberHits:{},turns:0,totalPoints:0,realPoints:0,bestTurn:0};}
+function emptyPlayer(){return{games:0,wins:0,totalDarts:0,closingDarts:[],numberHits:{},turns:0,totalPoints:0,realPoints:0,bestTurn:0,lastGameDarts:0,lastGameRealPts:0,bestGameAvg:0};}
 
 function recordThrowStat(playerName, label, pts){
   const s=loadStatsLocal();
@@ -888,15 +956,22 @@ function recordTurnStat(playerName, turnTotal){
   }
   saveStats(s);
 }
-function recordGameStat(playerName, won, dartsUsed, members=null){
+function recordGameStat(playerName, won, dartsUsed, members=null, realPtsThisGame=0){
   const s=loadStatsLocal();
   if(!s[playerName])s[playerName]=emptyPlayer();
   const p=s[playerName];
   p.games=(p.games||0)+1;
   if(won)p.wins=(p.wins||0)+1;
   if(dartsUsed>0)p.closingDarts=[...(p.closingDarts||[]),dartsUsed];
-  // Stocker les membres de l'équipe pour les retrouver dans la page stats
   if(members&&members.length) p.members=members;
+  // Stats de la dernière partie
+  p.lastGameDarts=dartsUsed;
+  p.lastGameRealPts=realPtsThisGame;
+  // Meilleure moyenne par partie
+  if(dartsUsed>0){
+    const avg=realPtsThisGame/dartsUsed;
+    if(avg>(p.bestGameAvg||0)) p.bestGameAvg=Math.round(avg*10)/10;
+  }
   saveStats(s);
 }
 function clearStats(){
@@ -1224,6 +1299,11 @@ function startGame(){
   }
   gameActive=true;
   gs.turnHistory=[];
+  // Mémoriser les realPoints de chaque joueur au départ pour calculer les pts de cette partie
+  const initStats=loadStatsLocal();
+  gs.realPtsBefore={};
+  const pNames=gs.isTeam?gs.teams.flatMap(t=>t.members):gs.players.map(p=>p.name);
+  pNames.forEach(n=>{gs.realPtsBefore[n]=(initStats[n]||{}).realPoints||0;});
   navTo('game');
   renderGame();
 }
@@ -1295,7 +1375,7 @@ function buildNumpad(){
   [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,'B25','B50','0'].forEach(n=>{
     const b=document.createElement('div');
     let cls='num-btn',label=n;
-    if(n==='B25'){cls+=' bull';label='Bull';}
+    if(n==='B25'){cls+=' bull';label='B25';}
     else if(n==='B50'){cls+=' dbull';label='Bull 50';}
     else if(n===0||n==='0'){cls+=' miss';label='✗';}
     b.className=cls;b.textContent=label;b.onclick=()=>addThrow(n);pad.appendChild(b);
@@ -1356,7 +1436,10 @@ function addThrow(n){
     const statName=gs.isTeam?gs.teams[gs.curTeam].name:pName;
     const dartCount=gs.isTeam?gs.teams[gs.curTeam].dartsThisGame:gs.players[gs.cur].dartsThisGame;
     const teamMembers=gs.isTeam?gs.teams[gs.curTeam].members:null;
-    recordGameStat(statName,isWinner,dartCount,teamMembers);
+    const pStats=loadStatsLocal();
+    const realPts=(pStats[pName]||{}).realPoints||0;
+    const prevRealPts=gs.realPtsBefore||0;
+    recordGameStat(statName,isWinner,dartCount,teamMembers,realPts-prevRealPts);
     renderGame();
     setTimeout(handleRoundEnd,120);
     return;
@@ -1479,7 +1562,10 @@ function endTurn(){
     const statName2=gs.isTeam?gs.teams[gs.curTeam].name:pName;
     const dartCount2=gs.isTeam?gs.teams[gs.curTeam].dartsThisGame:gs.players[gs.cur].dartsThisGame;
     const teamMembers2=gs.isTeam?gs.teams[gs.curTeam].members:null;
-    recordGameStat(statName2,isWinner2,dartCount2,teamMembers2);
+    const pStats2=loadStatsLocal();
+    const realPts2=(pStats2[pName]||{}).realPoints||0;
+    const prevRealPts2=gs.realPtsBefore||0;
+    recordGameStat(statName2,isWinner2,dartCount2,teamMembers2,realPts2-prevRealPts2);
     handleRoundEnd();return;
   }
   applyScore(newScore);
@@ -1493,10 +1579,12 @@ function nextTurn(){
   const pName=curPlayerName();
   const scoreBefore=gs.isTeam?gs.teams[gs.curTeam].score:gs.players[gs.cur].score;
   gs.turnHistory=gs.turnHistory||[];
+  // scoreBefore = score du joueur AVANT ce tour = score actuel + points de cette volée
+  const throwsTotal=gs.throws.reduce((s,t)=>s+t.pts,0);
   gs.turnHistory.push({
     playerIdx:gs.isTeam?gs.curTeam:gs.cur,
     playerName:pName,
-    scoreBefore:scoreBefore+(gs.throws.reduce((s,t)=>s+t.pts,0)), // score avant ce tour
+    scoreBefore:scoreBefore+throwsTotal,
     throws:[...gs.throws]
   });
   // Garder max 10 tours en historique
@@ -1726,12 +1814,16 @@ function renderStats(){
   const maxHit=hitEntries.length?hitEntries[0][1]:1;
 
   const isTeamStat = !!(p.members && p.members.length);
+  const lastAvg=p.lastGameDarts>0?Math.round(p.lastGameRealPts/p.lastGameDarts*10)/10:null;
+  const bestAvg=p.bestGameAvg||null;
   let html=`<div class="stat-grid">
     <div class="stat-card"><div class="sc-label">Parties jouées</div><div class="sc-val">${games}</div><div class="sc-sub">${wins}V · ${games-wins}D</div></div>
     <div class="stat-card"><div class="sc-label">Taux de victoire</div><div class="sc-val">${winRate}%</div><div class="sc-sub">sur ${games} partie${games>1?'s':''}</div></div>
     <div class="stat-card"><div class="sc-label">Fléchettes / clôture</div><div class="sc-val">${avgClose!==null?avgClose:'—'}</div><div class="sc-sub">${closingDarts.length} clôture${closingDarts.length>1?'s':''}</div></div>
-    ${!isTeamStat?`<div class="stat-card"><div class="sc-label">Points / fléchette</div><div class="sc-val">${avgPerDart}</div><div class="sc-sub">${totalDarts} lancer${totalDarts>1?'s':''}</div></div>`:''}
-    ${!isTeamStat?`<div class="stat-card full" style="border-color:rgba(240,201,58,.3)"><div class="sc-label">🏆 Meilleure volée</div><div class="sc-val" style="color:var(--accent)">${p.bestTurn||'—'}</div><div class="sc-sub">points en un tour</div></div>`:''}`;
+    ${!isTeamStat?`<div class="stat-card"><div class="sc-label">Points / fléchette</div><div class="sc-val">${avgPerDart}</div><div class="sc-sub">toutes parties</div></div>`:''}
+    ${!isTeamStat?`<div class="stat-card"><div class="sc-label">Dernière partie</div><div class="sc-val">${lastAvg!==null?lastAvg:'—'}</div><div class="sc-sub">pts/fléchette</div></div>`:''}
+    ${!isTeamStat?`<div class="stat-card"><div class="sc-label">🏆 Meilleure partie</div><div class="sc-val" style="color:var(--accent)">${bestAvg!==null?bestAvg:'—'}</div><div class="sc-sub">pts/fléchette</div></div>`:''}
+    ${!isTeamStat?`<div class="stat-card"><div class="sc-label">🏆 Meilleure volée</div><div class="sc-val" style="color:var(--accent)">${p.bestTurn||'—'}</div><div class="sc-sub">points en un tour</div></div>`:''}`;
 
   if(hitEntries.length){
     html+=`<div class="stat-card full"><div class="sc-label">Top zones touchées</div><div class="bar-chart">`;
