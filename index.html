@@ -444,8 +444,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 .clear-btn{font-size:11px;color:var(--muted);background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:6px 12px;cursor:pointer;font-family:var(--mono)}
 .stat-player-select{padding:0 20px 16px;display:flex;gap:7px;overflow-x:auto;scrollbar-width:none}
 .stat-player-select::-webkit-scrollbar{display:none}
-.sp-pill{padding:7px 16px;border:1px solid var(--border2);border-radius:20px;background:var(--surface);color:var(--muted);font-family:var(--mono);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:background .15s,color .15s,border-color .15s}
-.sp-pill.active{background:var(--accent);border-color:var(--accent);color:#0a0a0c}
+.sp-pill{padding:7px 16px;border:2px solid transparent;border-radius:20px;background:var(--surface);color:var(--muted);font-family:var(--mono);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:background .15s,color .15s,border-color .15s;outline:1px solid var(--border2);outline-offset:-1px}
+.sp-pill.active{background:var(--accent);border-color:var(--accent);color:#0a0a0c;outline:none}
 .stat-empty{text-align:center;padding:70px 20px;color:var(--muted);font-size:14px}
 .stat-empty .se-icon{font-size:44px;margin-bottom:14px;opacity:.5}
 
@@ -830,8 +830,9 @@ async function connectSync(){
     syncGroupId = 'g_' + code;
     syncEnabled = true;
     localStorage.setItem('fl_sync_code', code);
-    // Upload les stats locales de cet appareil
-    await pushLocalStatsToCloud();
+    // Pull le cloud si plus récent, sinon push le local
+    const pulled = await pullFromCloud();
+    if(!pulled) await pushLocalStatsToCloud();
     status.textContent = '✓ Connecté ! Session ' + code;
     status.className = 'sync-status ok';
     updateSyncBadge();
@@ -842,91 +843,58 @@ async function connectSync(){
   }
 }
 
-// ── ID unique par appareil ──
-function getDeviceId(){
-  let id = localStorage.getItem('fl_device_id');
-  if(!id){
-    id = 'dev_' + Math.random().toString(36).slice(2,10);
-    localStorage.setItem('fl_device_id', id);
-  }
-  return id;
-}
+// ══════════════════════════════════════════════════════
+// SYNC — Stratégie : un seul document "stats" avec timestamp
+// La dernière écriture (timestamp le plus récent) gagne toujours
+// Suppression = écriture avec données vides + timestamp récent
+// ══════════════════════════════════════════════════════
 
-// ── Upload : écrire les stats de CET appareil dans Firebase ──
 async function pushLocalStatsToCloud(){
   if(!syncEnabled || !db) return;
   const local = loadStatsLocal();
-  if(!Object.keys(local).length) return;
   try {
     const ref = db.collection('fl_groups').doc(syncGroupId);
-    await ref.set({ ['device_' + getDeviceId()]: local }, { merge: true });
+    // On écrit stats + timestamp. La version la plus récente gagne.
+    await ref.set({
+      stats: local,
+      updatedAt: Date.now()
+    }, { merge: false }); // pas de merge : on écrase avec la version locale
   } catch(e){ console.warn('pushLocalStatsToCloud:', e); }
 }
 
-// ── Agréger TOUS les appareils pour l'affichage (sans modifier localStorage) ──
-async function getAggregatedStats(){
-  if(!syncEnabled || !db) return loadStatsLocal();
+async function pullFromCloud(){
+  if(!syncEnabled || !db) return false;
   try {
     const ref = db.collection('fl_groups').doc(syncGroupId);
     const snap = await ref.get();
-    if(!snap.exists) return loadStatsLocal();
+    if(!snap.exists) return false;
     const data = snap.data();
-    let merged = {};
-    for(const key of Object.keys(data)){
-      if(key.startsWith('device_')){
-        merged = aggregateStats(merged, data[key]);
-      }
+    const cloudTs = data.updatedAt || 0;
+    const localTs = parseInt(localStorage.getItem('fl_stats_ts')||'0');
+    // Prendre la version la plus récente
+    if(cloudTs > localTs && data.stats){
+      saveStatsLocal(data.stats);
+      localStorage.setItem('fl_stats_ts', String(cloudTs));
+      return true;
     }
-    return Object.keys(merged).length ? merged : loadStatsLocal();
-  } catch(e){ return loadStatsLocal(); }
+    return false;
+  } catch(e){ console.warn('pullFromCloud:', e); return false; }
 }
 
-// Pull = juste uploader les stats locales (pas d'écriture en local depuis cloud)
+async function getAggregatedStats(){
+  // Avec la nouvelle stratégie, le cloud = une seule source de vérité
+  // On tire les stats depuis le cloud si plus récentes
+  await pullFromCloud();
+  return loadStatsLocal();
+}
+
 async function pullAndMergeFromCloud(){
-  if(!syncEnabled || !db) return;
-  await pushLocalStatsToCloud();
+  await pullFromCloud();
 }
 
-// ── Agrégation : additionner les stats de deux appareils ──
-function aggregateStats(a, b){
-  // a = stats agrégées jusqu'ici, b = stats d'un appareil
-  const result = JSON.parse(JSON.stringify(a));
-  for(const name of Object.keys(b)){
-    if(!result[name]){
-      result[name] = JSON.parse(JSON.stringify(b[name]));
-    } else {
-      const r = result[name], src = b[name];
-      // Cumulatifs : ADDITIONNER (chaque appareil a ses propres parties)
-      r.games       = (r.games||0)       + (src.games||0);
-      r.wins        = (r.wins||0)        + (src.wins||0);
-      r.totalDarts  = (r.totalDarts||0)  + (src.totalDarts||0);
-      r.totalPoints = (r.totalPoints||0) + (src.totalPoints||0);
-      r.realPoints  = (r.realPoints||0)  + (src.realPoints||0);
-      r.turns       = (r.turns||0)       + (src.turns||0);
-      // Records : prendre le meilleur
-      r.bestTurn    = Math.max(r.bestTurn||0,    src.bestTurn||0);
-      r.bestGameAvg = Math.max(r.bestGameAvg||0, src.bestGameAvg||0);
-      // Dernière partie : la plus récente (lastGameDarts > 0)
-      if((src.lastGameDarts||0) > 0){
-        r.lastGameDarts   = src.lastGameDarts;
-        r.lastGameRealPts = src.lastGameRealPts||0;
-      }
-      // closingDarts : concaténer et garder les 30 dernières
-      const cd = [...(r.closingDarts||[]), ...(src.closingDarts||[])];
-      r.closingDarts = cd.slice(-30);
-      // numberHits : additionner
-      if(!r.numberHits) r.numberHits = {};
-      for(const k of Object.keys(src.numberHits||{})){
-        r.numberHits[k] = (r.numberHits[k]||0) + (src.numberHits[k]||0);
-      }
-      if(src.members) r.members = src.members;
-    }
-  }
-  return result;
-}
-
-// Compatibilité avec l'ancien code qui appelle mergeStats
-function mergeStats(a, b){ return aggregateStats(a, b); }
+// Compatibilité
+function mergeStats(a, b){ return b; }
+function aggregateStats(a, b){ return b; }
 
 function updateSyncBadge(){
   const badge = document.getElementById('syncBadge');
@@ -961,13 +929,13 @@ async function loadStats(){
 }
 
 async function saveStats(s){
-  // Sauvegarder en local (stats de CET appareil uniquement)
+  const ts = Date.now();
   saveStatsLocal(s);
-  // Uploader en cloud sous l'ID de cet appareil
+  localStorage.setItem('fl_stats_ts', String(ts));
   if(syncEnabled && db){
     try {
       const ref = db.collection('fl_groups').doc(syncGroupId);
-      await ref.set({ ['device_' + getDeviceId()]: s }, { merge: true });
+      await ref.set({ stats: s, updatedAt: ts });
     } catch(e){ console.warn('saveStats cloud fail:', e); }
   }
 }
@@ -1040,7 +1008,7 @@ function clearStats(){
   if(confirm('Effacer les statistiques de '+selectedStatPlayer+' ?')){
     const s=loadStatsLocal();
     delete s[selectedStatPlayer];
-    saveStats(s);
+    saveStats(s); // saveStats met à jour le timestamp → sera propagé au prochain pull
     selectedStatPlayer=null;
     renderStats();
   }
@@ -2249,8 +2217,9 @@ function restoreGameState(){
     if(initFirebase()){
       syncGroupId = 'g_' + savedCode;
       syncEnabled = true;
-      // Uploader les stats locales de cet appareil dans Firebase
-      await pushLocalStatsToCloud();
+      // Récupérer le cloud si plus récent, sinon pousser le local
+      const pulled = await pullFromCloud();
+      if(!pulled) await pushLocalStatsToCloud();
       updateSyncBadge();
     }
   }
