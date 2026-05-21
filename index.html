@@ -626,7 +626,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
     <input class="sync-input" id="syncCodeInput" type="number" inputmode="numeric" placeholder="ex: 1234">
   </div>
   <button class="sync-btn" onclick="connectSync()">Connecter</button>
-  <span class="sync-skip" onclick="skipSync()">Continuer sans synchronisation</span>
+  <span class="sync-skip" onclick="skipSync()">Se déconnecter / Sans synchronisation</span>
   <div class="sync-status" id="syncStatus"></div>
 </div>
 <!-- ══════════════ WIN SCREEN ══════════════ -->
@@ -804,7 +804,12 @@ function openSyncScreen(){
 }
 
 function skipSync(){
+  // Effacer le code de session et déconnecter
+  localStorage.removeItem('fl_sync_code');
+  syncEnabled = false;
+  syncGroupId = null;
   document.getElementById('sync-screen').classList.remove('show');
+  updateSyncBadge();
 }
 
 async function connectSync(){
