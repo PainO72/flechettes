@@ -444,8 +444,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 .clear-btn{font-size:11px;color:var(--muted);background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:6px 12px;cursor:pointer;font-family:var(--mono)}
 .stat-player-select{padding:0 20px 16px;display:flex;gap:7px;overflow-x:auto;scrollbar-width:none}
 .stat-player-select::-webkit-scrollbar{display:none}
-.sp-pill{padding:7px 16px;border:1px solid var(--border2);border-radius:20px;background:var(--surface);color:var(--muted);font-family:var(--mono);font-size:12px;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s}
-.sp-pill.active{background:var(--accent);border-color:var(--accent);color:#0a0a0c;font-weight:600}
+.sp-pill{padding:7px 16px;border:1px solid var(--border2);border-radius:20px;background:var(--surface);color:var(--muted);font-family:var(--mono);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:background .15s,color .15s,border-color .15s}
+.sp-pill.active{background:var(--accent);border-color:var(--accent);color:#0a0a0c}
 .stat-empty{text-align:center;padding:70px 20px;color:var(--muted);font-size:14px}
 .stat-empty .se-icon{font-size:44px;margin-bottom:14px;opacity:.5}
 
@@ -569,7 +569,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
   <div class="top-bar">
     <button class="back-btn" onclick="backToSetup()">←</button>
     <div class="game-badge" id="modeBadge"></div>
-    <div style="display:flex;gap:6px">
+    <div style="display:flex;gap:6px;align-items:center">
+      <button onclick="confirmEndGame()" style="background:rgba(232,84,71,.12);border:1px solid rgba(232,84,71,.35);border-radius:20px;padding:5px 12px;font-family:var(--mono);font-size:11px;font-weight:600;color:var(--red);cursor:pointer;line-height:1">Terminer</button>
       <button id="fullscreenBtn" onclick="toggleFullscreen()" style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 10px;font-size:16px;cursor:pointer;line-height:1" title="Plein écran">⛶</button>
       <button id="themeBtnGame" onclick="toggleTheme()" style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 10px;font-size:16px;cursor:pointer;line-height:1">☀️</button>
     </div>
@@ -979,7 +980,7 @@ function getPlayerStats(name){
   if(!s[name])s[name]={games:0,wins:0,totalDarts:0,closingDarts:[],numberHits:{},turns:0,totalPoints:0};
   return s;
 }
-function emptyPlayer(){return{games:0,wins:0,totalDarts:0,closingDarts:[],numberHits:{},turns:0,totalPoints:0,realPoints:0,bestTurn:0,lastGameDarts:0,lastGameRealPts:0,bestGameAvg:0};}
+function emptyPlayer(){return{games:0,wins:0,nc:0,totalDarts:0,closingDarts:[],numberHits:{},turns:0,totalPoints:0,realPoints:0,bestTurn:0,lastGameDarts:0,lastGameRealPts:0,bestGameAvg:0};}
 
 function recordThrowStat(playerName, label, pts){
   const s=loadStatsLocal();
@@ -1014,13 +1015,15 @@ function recordTurnStat(playerName, turnTotal){
   }
   saveStats(s);
 }
-function recordGameStat(playerName, won, dartsUsed, members=null, realPtsThisGame=0){
+function recordGameStat(playerName, won, dartsUsed, members=null, realPtsThisGame=0, notClosed=false, checkoutDartsUsed=0){
   const s=loadStatsLocal();
   if(!s[playerName])s[playerName]=emptyPlayer();
   const p=s[playerName];
   p.games=(p.games||0)+1;
   if(won)p.wins=(p.wins||0)+1;
-  if(dartsUsed>0)p.closingDarts=[...(p.closingDarts||[]),dartsUsed];
+  if(notClosed)p.nc=(p.nc||0)+1;
+  // closingDarts = fléchettes en zone checkout (≤170), seulement si clôturé
+  if(!notClosed && checkoutDartsUsed>0)p.closingDarts=[...(p.closingDarts||[]),checkoutDartsUsed];
   if(members&&members.length) p.members=members;
   // Stats de la dernière partie
   p.lastGameDarts=dartsUsed;
@@ -1076,6 +1079,41 @@ function updateResumeBar(){
   const barStats=document.getElementById('resume-bar-stats');
   if(barStats) barStats.style.display=gameActive?'flex':'none';
 }
+function confirmEndGame(){
+  if(!confirm('Terminer la partie ? Les joueurs non clôturés seront comptés NC.')) return;
+  // Enregistrer NC pour tous les joueurs qui n'ont pas clôturé
+  if(gs.isTeam){
+    gs.teams.forEach((t,i)=>{
+      const won = gs.finishOrder[0]===i;
+      const closed = gs.finishOrder.includes(i);
+      if(!won){
+        t.members.forEach(m=>{
+          const prev=(gs.realPtsBefore&&gs.realPtsBefore[m])||0;
+          const cur=(loadStatsLocal()[m]||{}).realPoints||0;
+          recordGameStat(t.name, false, t.dartsThisGame||0, t.members, Math.max(0,cur-prev), !closed, closed?t.checkoutDarts||0:0);
+        });
+      }
+    });
+  } else {
+    const winnerId = gs.finishOrder.length>0 ? gs.finishOrder[0] : -1;
+    gs.players.forEach((p,i)=>{
+      if(i!==winnerId){
+        const closed = gs.finishOrder.includes(i);
+        const prev=(gs.realPtsBefore&&gs.realPtsBefore[p.name])||0;
+        const cur=(loadStatsLocal()[p.name]||{}).realPoints||0;
+        recordGameStat(p.name, false, p.dartsThisGame||0, null, Math.max(0,cur-prev), !closed, closed?p.checkoutDarts||0:0);
+      }
+    });
+  }
+  gameActive=false;
+  clearGameState();
+  document.getElementById('win-screen').style.display='none';
+  document.querySelector('.bottom-nav').style.display='';
+  document.getElementById('game-page').style.display='none';
+  hideResumeBar();
+  navTo('setup');
+}
+
 function backToSetup(force=false){
   document.getElementById('win-screen').style.display='none';
   document.querySelector('.bottom-nav').style.display='';
@@ -1342,7 +1380,7 @@ function startGame(){
       for(let p=0;p<ppt;p++){const v=document.getElementById(`pn${t}_${p}`)?.value.trim();members.push(v||`Joueur ${t*ppt+p+1}`);}
       const tNameVal=document.getElementById(`tn${t}`)?.value.trim();
       const tName=tNameVal||TNAMES[t];
-      teams.push({name:tName,color:TCOLS[t],members,score:cfg.mode,legs:0,finishRank:null,memberIdx:0,dartsThisGame:0});
+      teams.push({name:tName,color:TCOLS[t],members,score:cfg.mode,legs:0,finishRank:null,memberIdx:0,dartsThisGame:0,checkoutDarts:0});
     }
     // Mémoriser les noms utilisés
     teams.forEach(t=>{addKnownTeam(t.name);t.members.forEach(m=>addKnownPlayer(m));});
@@ -1352,7 +1390,7 @@ function startGame(){
     for(let i=0;i<cfg.players;i++){const v=document.getElementById('pn'+i)?.value.trim();names.push(v||(cfg.players===1?'Vous':'Joueur '+(i+1)));}
     names.forEach(n=>addKnownPlayer(n));
     gs={mode:cfg.mode,fin:cfg.fin,isTeam:false,
-      players:names.map(n=>({name:n,score:cfg.mode,legs:0,finishRank:null,dartsThisGame:0})),
+      players:names.map(n=>({name:n,score:cfg.mode,legs:0,finishRank:null,dartsThisGame:0,checkoutDarts:0})),
       cur:0,throws:[],mult:1,finishOrder:[]};
   }
   gameActive=true;
@@ -1455,8 +1493,16 @@ function curPlayerName(){
   return gs.players[gs.cur].name;
 }
 function incDarts(){
-  if(gs.isTeam)gs.teams[gs.curTeam].dartsThisGame=(gs.teams[gs.curTeam].dartsThisGame||0)+1;
-  else gs.players[gs.cur].dartsThisGame=(gs.players[gs.cur].dartsThisGame||0)+1;
+  // Seuil checkout : 170 en double/master, score de départ en simple
+  // Simple : max en 3 fléchettes = T20×3 = 180. Double/master : max = 170 (finir sur double)
+  const checkoutThreshold = gs.fin==='simple' ? 180 : 170;
+  if(gs.isTeam){
+    gs.teams[gs.curTeam].dartsThisGame=(gs.teams[gs.curTeam].dartsThisGame||0)+1;
+    if(curScore()<=checkoutThreshold) gs.teams[gs.curTeam].checkoutDarts=(gs.teams[gs.curTeam].checkoutDarts||0)+1;
+  } else {
+    gs.players[gs.cur].dartsThisGame=(gs.players[gs.cur].dartsThisGame||0)+1;
+    if(curScore()<=checkoutThreshold) gs.players[gs.cur].checkoutDarts=(gs.players[gs.cur].checkoutDarts||0)+1;
+  }
 }
 function recordFinish(idx){
   if(!gs.finishOrder.includes(idx)){
@@ -1493,11 +1539,12 @@ function addThrow(n){
     const isWinner=gs.finishOrder.length===1;
     const statName=gs.isTeam?gs.teams[gs.curTeam].name:pName;
     const dartCount=gs.isTeam?gs.teams[gs.curTeam].dartsThisGame:gs.players[gs.cur].dartsThisGame;
+    const checkoutDarts=gs.isTeam?gs.teams[gs.curTeam].checkoutDarts:gs.players[gs.cur].checkoutDarts;
     const teamMembers=gs.isTeam?gs.teams[gs.curTeam].members:null;
     const pStats=loadStatsLocal();
     const realPts=(pStats[pName]||{}).realPoints||0;
-    const prevRealPts=gs.realPtsBefore||0;
-    recordGameStat(statName,isWinner,dartCount,teamMembers,realPts-prevRealPts);
+    const prevRealPts=(gs.realPtsBefore&&gs.realPtsBefore[pName])||0;
+    recordGameStat(statName,isWinner,dartCount,teamMembers,Math.max(0,realPts-prevRealPts),false,checkoutDarts);
     renderGame();
     setTimeout(handleRoundEnd,120);
     return;
@@ -1619,11 +1666,12 @@ function endTurn(){
     const isWinner2=gs.finishOrder.length===1;
     const statName2=gs.isTeam?gs.teams[gs.curTeam].name:pName;
     const dartCount2=gs.isTeam?gs.teams[gs.curTeam].dartsThisGame:gs.players[gs.cur].dartsThisGame;
+    const checkoutDarts2=gs.isTeam?gs.teams[gs.curTeam].checkoutDarts:gs.players[gs.cur].checkoutDarts;
     const teamMembers2=gs.isTeam?gs.teams[gs.curTeam].members:null;
     const pStats2=loadStatsLocal();
     const realPts2=(pStats2[pName]||{}).realPoints||0;
-    const prevRealPts2=gs.realPtsBefore||0;
-    recordGameStat(statName2,isWinner2,dartCount2,teamMembers2,realPts2-prevRealPts2);
+    const prevRealPts2=(gs.realPtsBefore&&gs.realPtsBefore[pName])||0;
+    recordGameStat(statName2,isWinner2,dartCount2,teamMembers2,Math.max(0,realPts2-prevRealPts2),false,checkoutDarts2);
     handleRoundEnd();return;
   }
   applyScore(newScore);
@@ -1688,11 +1736,24 @@ function handleRoundEnd(){
 }
 
 function showFinalRanking(){
-  // record résultats pour les non-finis
+  // Enregistrer les défaites pour TOUS sauf le 1er gagnant
+  const winnerId = gs.finishOrder.length>0 ? gs.finishOrder[0] : -1;
   if(gs.isTeam){
-    gs.teams.forEach((t,i)=>{if(t.score>0)recordGameStat(t.name,false,0,t.members);});
+    gs.teams.forEach((t,i)=>{
+      if(i!==winnerId){
+        const notClosed = t.score>0;
+        recordGameStat(t.name,false,t.dartsThisGame||0,t.members,0,notClosed,notClosed?0:t.checkoutDarts||0);
+      }
+    });
   } else {
-    gs.players.forEach((p,i)=>{if(p.score>0)recordGameStat(p.name,false,0);});
+    gs.players.forEach((p,i)=>{
+      if(i!==winnerId){
+        const prevRealPts=(gs.realPtsBefore&&gs.realPtsBefore[p.name])||0;
+        const curRealPts=(loadStatsLocal()[p.name]||{}).realPoints||0;
+        const notClosed = p.score>0;
+        recordGameStat(p.name,false,p.dartsThisGame||0,null,Math.max(0,curRealPts-prevRealPts),notClosed,notClosed?0:p.checkoutDarts||0);
+      }
+    });
   }
   const multi=gs.isTeam?gs.teams.length>1:gs.players.length>1;
   const wi=gs.finishOrder.length>0?gs.finishOrder[0]:0;
@@ -1875,7 +1936,7 @@ async function renderStats(){
   const lastAvg=p.lastGameDarts>0?Math.round(p.lastGameRealPts/p.lastGameDarts*10)/10:null;
   const bestAvg=p.bestGameAvg||null;
   let html=`<div class="stat-grid">
-    <div class="stat-card"><div class="sc-label">Parties jouées</div><div class="sc-val">${games}</div><div class="sc-sub">${wins}V · ${games-wins}D</div></div>
+    <div class="stat-card"><div class="sc-label">Parties jouées</div><div class="sc-val">${games}</div><div class="sc-sub">${wins}V · ${games-wins-(p.nc||0)}D · ${p.nc||0}NC</div></div>
     <div class="stat-card"><div class="sc-label">Taux de victoire</div><div class="sc-val">${winRate}%</div><div class="sc-sub">sur ${games} partie${games>1?'s':''}</div></div>
     <div class="stat-card"><div class="sc-label">Fléchettes / clôture</div><div class="sc-val">${avgClose!==null?avgClose:'—'}</div><div class="sc-sub">${closingDarts.length} clôture${closingDarts.length>1?'s':''}</div></div>
     ${!isTeamStat?`<div class="stat-card"><div class="sc-label">Points / fléchette</div><div class="sc-val">${avgPerDart}</div><div class="sc-sub">toutes parties</div></div>`:''}
