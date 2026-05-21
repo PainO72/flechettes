@@ -995,9 +995,12 @@ function recordGameStat(playerName, won, dartsUsed, members=null, realPtsThisGam
   const s=loadStatsLocal();
   if(!s[playerName])s[playerName]=emptyPlayer();
   const p=s[playerName];
-  p.games=(p.games||0)+1;
-  if(won)p.wins=(p.wins||0)+1;
-  if(notClosed)p.nc=(p.nc||0)+1;
+  // En solo, on n'enregistre pas les parties/victoires/défaites
+  if(!gs || !gs.isSolo){
+    p.games=(p.games||0)+1;
+    if(won)p.wins=(p.wins||0)+1;
+    if(notClosed)p.nc=(p.nc||0)+1;
+  }
   // closingDarts = fléchettes en zone checkout (≤170), seulement si clôturé
   if(!notClosed && checkoutDartsUsed>0)p.closingDarts=[...(p.closingDarts||[]),checkoutDartsUsed];
   if(members&&members.length) p.members=members;
@@ -1463,7 +1466,8 @@ function startGame(){
   }
   gameActive=true;
   gs.turnHistory=[];
-  gs.statsRecorded=new Set(); // évite les doubles enregistrements
+  gs.statsRecorded=new Set();
+  gs.isSolo=(!isTeam && cfg.players===1); // partie solo = pas de V/D/NC
   // Mémoriser les realPoints de chaque joueur au départ pour calculer les pts de cette partie
   const initStats=loadStatsLocal();
   gs.realPtsBefore={};
@@ -2008,11 +2012,13 @@ async function renderStats(){
   const maxHit=hitEntries.length?hitEntries[0][1]:1;
 
   const isTeamStat = !!(p.members && p.members.length);
+  // Joueur solo = jamais de parties enregistrées mais a des lancers
+  const isSoloPlayer = games===0 && totalDarts>0;
   const lastAvg=p.lastGameDarts>0?Math.round(p.lastGameRealPts/p.lastGameDarts*10)/10:null;
   const bestAvg=p.bestGameAvg||null;
   let html=`<div class="stat-grid">
-    <div class="stat-card"><div class="sc-label">Parties jouées</div><div class="sc-val">${games}</div><div class="sc-sub">${wins}V · ${games-wins-(p.nc||0)}D · ${p.nc||0}NC</div></div>
-    <div class="stat-card"><div class="sc-label">Taux de victoire</div><div class="sc-val">${winRate}%</div><div class="sc-sub">sur ${games} partie${games>1?'s':''}</div></div>
+    ${!isSoloPlayer?`<div class="stat-card"><div class="sc-label">Parties jouées</div><div class="sc-val">${games}</div><div class="sc-sub">${wins}V · ${games-wins-(p.nc||0)}D · ${p.nc||0}NC</div></div>`:''}
+    ${!isSoloPlayer?`<div class="stat-card"><div class="sc-label">Taux de victoire</div><div class="sc-val">${winRate}%</div><div class="sc-sub">sur ${games} partie${games>1?'s':''}</div></div>`:''}
     <div class="stat-card"><div class="sc-label">Fléchettes / clôture</div><div class="sc-val">${avgClose!==null?avgClose:'—'}</div><div class="sc-sub">${closingDarts.length} clôture${closingDarts.length>1?'s':''}</div></div>
     ${!isTeamStat?`<div class="stat-card"><div class="sc-label">Points / fléchette</div><div class="sc-val">${avgPerDart}</div><div class="sc-sub">toutes parties</div></div>`:''}
     ${!isTeamStat?`<div class="stat-card"><div class="sc-label">Dernière partie</div><div class="sc-val">${lastAvg!==null?lastAvg:'—'}</div><div class="sc-sub">pts/fléchette</div></div>`:''}
