@@ -984,6 +984,14 @@ function recordTurnStat(playerName, turnTotal){
   saveStats(s);
 }
 function recordGameStat(playerName, won, dartsUsed, members=null, realPtsThisGame=0, notClosed=false, checkoutDartsUsed=0){
+  // Empêcher les doubles enregistrements pour la même partie
+  const recordKey = playerName;
+  if(gs && gs.statsRecorded && gs.statsRecorded.has(recordKey)){
+    console.log('recordGameStat SKIP (already recorded):', playerName);
+    return;
+  }
+  if(gs && gs.statsRecorded) gs.statsRecorded.add(recordKey);
+
   const s=loadStatsLocal();
   if(!s[playerName])s[playerName]=emptyPlayer();
   const p=s[playerName];
@@ -1455,6 +1463,7 @@ function startGame(){
   }
   gameActive=true;
   gs.turnHistory=[];
+  gs.statsRecorded=new Set(); // évite les doubles enregistrements
   // Mémoriser les realPoints de chaque joueur au départ pour calculer les pts de cette partie
   const initStats=loadStatsLocal();
   gs.realPtsBefore={};
@@ -1921,6 +1930,7 @@ function continueRound(){
 
 function replayGame(){
   clearGameState();
+  if(gs) gs.statsRecorded = new Set();
   document.getElementById('win-screen').style.display='none';
   document.querySelector('.bottom-nav').style.display='';
   if(gs.isTeam)gs.teams.forEach(t=>{t.score=gs.mode;t.finishRank=null;t.memberIdx=0;t.dartsThisGame=0;});
