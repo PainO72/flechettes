@@ -826,8 +826,6 @@ async function connectSync(){
     localStorage.setItem('fl_sync_code', code);
     // Upload les stats locales de cet appareil
     await pushLocalStatsToCloud();
-    // Agréger tous les appareils du groupe en local
-    await pullAndMergeFromCloud();
     status.textContent = '✓ Connecté ! Session ' + code;
     status.className = 'sync-status ok';
     updateSyncBadge();
@@ -848,39 +846,39 @@ function getDeviceId(){
   return id;
 }
 
-// ── Upload : écrire UNIQUEMENT les stats de cet appareil dans Firebase ──
+// ── Upload : écrire les stats de CET appareil dans Firebase ──
 async function pushLocalStatsToCloud(){
   if(!syncEnabled || !db) return;
   const local = loadStatsLocal();
   if(!Object.keys(local).length) return;
   try {
     const ref = db.collection('fl_groups').doc(syncGroupId);
-    // Écrire les stats de cet appareil sous sa clé unique
     await ref.set({ ['device_' + getDeviceId()]: local }, { merge: true });
-    // Récupérer et fusionner TOUS les appareils du groupe
-    await pullAndMergeFromCloud();
   } catch(e){ console.warn('pushLocalStatsToCloud:', e); }
 }
 
-// ── Pull : lire tous les appareils et fusionner en local ──
-async function pullAndMergeFromCloud(){
-  if(!syncEnabled || !db) return;
+// ── Agréger TOUS les appareils pour l'affichage (sans modifier localStorage) ──
+async function getAggregatedStats(){
+  if(!syncEnabled || !db) return loadStatsLocal();
   try {
     const ref = db.collection('fl_groups').doc(syncGroupId);
     const snap = await ref.get();
-    if(!snap.exists) return;
+    if(!snap.exists) return loadStatsLocal();
     const data = snap.data();
-    // Agréger les stats de tous les appareils
     let merged = {};
     for(const key of Object.keys(data)){
       if(key.startsWith('device_')){
         merged = aggregateStats(merged, data[key]);
       }
     }
-    if(Object.keys(merged).length){
-      saveStatsLocal(merged);
-    }
-  } catch(e){ console.warn('pullAndMergeFromCloud:', e); }
+    return Object.keys(merged).length ? merged : loadStatsLocal();
+  } catch(e){ return loadStatsLocal(); }
+}
+
+// Pull = juste uploader les stats locales (pas d'écriture en local depuis cloud)
+async function pullAndMergeFromCloud(){
+  if(!syncEnabled || !db) return;
+  await pushLocalStatsToCloud();
 }
 
 // ── Agrégation : additionner les stats de deux appareils ──
@@ -957,10 +955,11 @@ async function loadStats(){
 }
 
 async function saveStats(s){
+  // Sauvegarder en local (stats de CET appareil uniquement)
   saveStatsLocal(s);
+  // Uploader en cloud sous l'ID de cet appareil
   if(syncEnabled && db){
     try {
-      // Écrire uniquement les stats de cet appareil (jamais d'écrasement)
       const ref = db.collection('fl_groups').doc(syncGroupId);
       await ref.set({ ['device_' + getDeviceId()]: s }, { merge: true });
     } catch(e){ console.warn('saveStats cloud fail:', e); }
@@ -1061,7 +1060,7 @@ function navTo(page){
   const navBtn=document.getElementById('nav-'+page);
   if(navBtn)navBtn.classList.add('active');
   currentPage=page;
-  if(page==='stats'){renderStats(); updateResumeBar();}
+  if(page==='stats'){renderStats().then(()=>{}); updateResumeBar();}
   if(page==='setup'){updateResumeBar();}
   window.scrollTo(0,0);
 }
@@ -1806,8 +1805,8 @@ function replayGame(){
 // ══════════════════════════════════════════════════════
 let selectedStatPlayer=null;
 
-function renderStats(){
-  const stats=loadStatsLocal();
+async function renderStats(){
+  const stats = await getAggregatedStats();
   const players=Object.keys(stats);
   const sel=document.getElementById('statPlayerSelect');
   sel.innerHTML='';
@@ -2110,10 +2109,8 @@ function restoreGameState(){
     if(initFirebase()){
       syncGroupId = 'g_' + savedCode;
       syncEnabled = true;
-      // D'abord uploader les stats locales de cet appareil
+      // Uploader les stats locales de cet appareil dans Firebase
       await pushLocalStatsToCloud();
-      // Puis agréger tous les appareils du groupe
-      await pullAndMergeFromCloud();
       updateSyncBadge();
     }
   }
