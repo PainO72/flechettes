@@ -1079,30 +1079,72 @@ function updateResumeBar(){
   const barStats=document.getElementById('resume-bar-stats');
   if(barStats) barStats.style.display=gameActive?'flex':'none';
 }
-function confirmEndGame(){
-  if(!confirm('Terminer la partie ? Les joueurs non clôturés seront comptés NC.')) return;
-  // Enregistrer NC pour tous les joueurs qui n'ont pas clôturé
+
+// Enregistre les stats de fin de partie pour tous les joueurs
+// winner = index du 1er ayant clôturé (finishOrder[0]) ou -1
+// closedIdx = liste des indices ayant clôturé (finishOrder)
+function recordAllGameStats(){
+  if(!gs || (!gs.players && !gs.teams)) return;
+  const winnerId = gs.finishOrder.length>0 ? gs.finishOrder[0] : -1;
+  const closedSet = new Set(gs.finishOrder);
+  const localStats = loadStatsLocal();
+
+  function getRealPts(name){
+    const prev=(gs.realPtsBefore&&gs.realPtsBefore[name])||0;
+    const cur=(localStats[name]||{}).realPoints||0;
+    return Math.max(0,cur-prev);
+  }
+
   if(gs.isTeam){
     gs.teams.forEach((t,i)=>{
-      const won = gs.finishOrder[0]===i;
-      const closed = gs.finishOrder.includes(i);
-      if(!won){
-        t.members.forEach(m=>{
-          const prev=(gs.realPtsBefore&&gs.realPtsBefore[m])||0;
-          const cur=(loadStatsLocal()[m]||{}).realPoints||0;
-          recordGameStat(t.name, false, t.dartsThisGame||0, t.members, Math.max(0,cur-prev), !closed, closed?t.checkoutDarts||0:0);
-        });
-      }
+      const isWinner = i===winnerId;
+      const closed   = closedSet.has(i);
+      const nc       = !closed;
+      // D = clôturé mais pas gagnant; NC = pas clôturé
+      const realPts  = t.members.reduce((s,m)=>s+getRealPts(m),0);
+      recordGameStat(
+        t.name, isWinner, t.dartsThisGame||0, t.members,
+        realPts, nc, nc?0:(t.checkoutDarts||0)
+      );
     });
   } else {
-    const winnerId = gs.finishOrder.length>0 ? gs.finishOrder[0] : -1;
     gs.players.forEach((p,i)=>{
-      if(i!==winnerId){
-        const closed = gs.finishOrder.includes(i);
-        const prev=(gs.realPtsBefore&&gs.realPtsBefore[p.name])||0;
-        const cur=(loadStatsLocal()[p.name]||{}).realPoints||0;
-        recordGameStat(p.name, false, p.dartsThisGame||0, null, Math.max(0,cur-prev), !closed, closed?p.checkoutDarts||0:0);
-      }
+      const isWinner = i===winnerId;
+      const closed   = closedSet.has(i);
+      const nc       = !closed;
+      recordGameStat(
+        p.name, isWinner, p.dartsThisGame||0, null,
+        getRealPts(p.name), nc, nc?0:(p.checkoutDarts||0)
+      );
+    });
+  }
+}
+
+function confirmEndGame(){
+  if(!confirm('Terminer la partie ? Les joueurs non clôturés seront comptés NC.')) return;
+  // Enregistrer stats pour TOUS (gagnant déjà enregistré, mais recordGameStat est idempotent non — on évite le double)
+  // Seuls les non encore enregistrés (pas dans finishOrder comme gagnant) reçoivent leur stat ici
+  // Le gagnant a déjà eu sa stat via addThrow/endTurn, on n'enregistre que les autres
+  if(gs.isTeam){
+    gs.teams.forEach((t,i)=>{
+      if(i===gs.finishOrder[0]) return; // gagnant déjà enregistré
+      const closed = gs.finishOrder.includes(i);
+      const nc = !closed;
+      const realPts = t.members.reduce((s,m)=>{
+        const prev=(gs.realPtsBefore&&gs.realPtsBefore[m])||0;
+        const cur=(loadStatsLocal()[m]||{}).realPoints||0;
+        return s+Math.max(0,cur-prev);
+      },0);
+      recordGameStat(t.name,false,t.dartsThisGame||0,t.members,realPts,nc,nc?0:t.checkoutDarts||0);
+    });
+  } else {
+    gs.players.forEach((p,i)=>{
+      if(i===gs.finishOrder[0]) return; // gagnant déjà enregistré
+      const closed = gs.finishOrder.includes(i);
+      const nc = !closed;
+      const prev=(gs.realPtsBefore&&gs.realPtsBefore[p.name])||0;
+      const cur=(loadStatsLocal()[p.name]||{}).realPoints||0;
+      recordGameStat(p.name,false,p.dartsThisGame||0,null,Math.max(0,cur-prev),nc,nc?0:p.checkoutDarts||0);
     });
   }
   gameActive=false;
@@ -1117,12 +1159,39 @@ function confirmEndGame(){
 function backToSetup(force=false){
   document.getElementById('win-screen').style.display='none';
   document.querySelector('.bottom-nav').style.display='';
-  // Si partie en cours et pas forcé → demander confirmation
-  if(gameActive && !force && document.getElementById('win-screen').style.display==='none'){
+  // Si partie en cours et pas forcé → laisser reprendre
+  if(gameActive && !force && document.getElementById('game-page').style.display!=='none'){
     showResumeBar();
     document.getElementById('game-page').style.display='none';
     navTo('setup');
     return;
+  }
+  // Force = abandon définitif (clic "Menu" sur win-screen ou "Abandon")
+  if(force && gameActive && gs && (gs.players||gs.teams)){
+    // Enregistrer NC pour tous les non encore enregistrés
+    const winnerId = gs.finishOrder.length>0 ? gs.finishOrder[0] : -1;
+    if(gs.isTeam){
+      gs.teams.forEach((t,i)=>{
+        if(i===winnerId) return;
+        const closed = gs.finishOrder.includes(i);
+        const nc = !closed;
+        const realPts = t.members.reduce((s,m)=>{
+          const prev=(gs.realPtsBefore&&gs.realPtsBefore[m])||0;
+          const cur=(loadStatsLocal()[m]||{}).realPoints||0;
+          return s+Math.max(0,cur-prev);
+        },0);
+        recordGameStat(t.name,false,t.dartsThisGame||0,t.members,realPts,nc,nc?0:t.checkoutDarts||0);
+      });
+    } else {
+      gs.players&&gs.players.forEach((p,i)=>{
+        if(i===winnerId) return;
+        const closed = gs.finishOrder.includes(i);
+        const nc = !closed;
+        const prev=(gs.realPtsBefore&&gs.realPtsBefore[p.name])||0;
+        const cur=(loadStatsLocal()[p.name]||{}).realPoints||0;
+        recordGameStat(p.name,false,p.dartsThisGame||0,null,Math.max(0,cur-prev),nc,nc?0:p.checkoutDarts||0);
+      });
+    }
   }
   gameActive=false;
   clearGameState();
@@ -1736,23 +1805,28 @@ function handleRoundEnd(){
 }
 
 function showFinalRanking(){
-  // Enregistrer les défaites pour TOUS sauf le 1er gagnant
+  // Enregistrer stats pour tous les non-gagnants
   const winnerId = gs.finishOrder.length>0 ? gs.finishOrder[0] : -1;
   if(gs.isTeam){
     gs.teams.forEach((t,i)=>{
-      if(i!==winnerId){
-        const notClosed = t.score>0;
-        recordGameStat(t.name,false,t.dartsThisGame||0,t.members,0,notClosed,notClosed?0:t.checkoutDarts||0);
-      }
+      if(i===winnerId) return; // gagnant déjà enregistré
+      const closed = gs.finishOrder.includes(i); // a clôturé mais pas 1er = D
+      const nc = !closed; // n'a pas clôturé = NC
+      const realPts = t.members.reduce((s,m)=>{
+        const prev=(gs.realPtsBefore&&gs.realPtsBefore[m])||0;
+        const cur=(loadStatsLocal()[m]||{}).realPoints||0;
+        return s+Math.max(0,cur-prev);
+      },0);
+      recordGameStat(t.name,false,t.dartsThisGame||0,t.members,realPts,nc,nc?0:t.checkoutDarts||0);
     });
   } else {
     gs.players.forEach((p,i)=>{
-      if(i!==winnerId){
-        const prevRealPts=(gs.realPtsBefore&&gs.realPtsBefore[p.name])||0;
-        const curRealPts=(loadStatsLocal()[p.name]||{}).realPoints||0;
-        const notClosed = p.score>0;
-        recordGameStat(p.name,false,p.dartsThisGame||0,null,Math.max(0,curRealPts-prevRealPts),notClosed,notClosed?0:p.checkoutDarts||0);
-      }
+      if(i===winnerId) return; // gagnant déjà enregistré
+      const closed = gs.finishOrder.includes(i); // D
+      const nc = !closed; // NC
+      const prev=(gs.realPtsBefore&&gs.realPtsBefore[p.name])||0;
+      const cur=(loadStatsLocal()[p.name]||{}).realPoints||0;
+      recordGameStat(p.name,false,p.dartsThisGame||0,null,Math.max(0,cur-prev),nc,nc?0:p.checkoutDarts||0);
     });
   }
   const multi=gs.isTeam?gs.teams.length>1:gs.players.length>1;
