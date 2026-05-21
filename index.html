@@ -1003,12 +1003,12 @@ function recordGameStat(playerName, won, dartsUsed, members=null, realPtsThisGam
   }
   saveStats(s);
 }
-function clearStats(){
+async function clearStats(){
   if(!selectedStatPlayer)return;
   if(confirm('Effacer les statistiques de '+selectedStatPlayer+' ?')){
     const s=loadStatsLocal();
     delete s[selectedStatPlayer];
-    saveStats(s); // saveStats met à jour le timestamp → sera propagé au prochain pull
+    await saveStats(s); // attendre la fin de l'upload avant de raffraichir
     selectedStatPlayer=null;
     renderStats();
   }
@@ -1134,10 +1134,13 @@ function backToSetup(force=false){
     navTo('setup');
     return;
   }
-  // Force = abandon définitif (clic "Menu" sur win-screen ou "Abandon")
-  if(force && gameActive && gs && (gs.players||gs.teams)){
-    // Enregistrer NC pour tous les non encore enregistrés
-    const winnerId = gs.finishOrder.length>0 ? gs.finishOrder[0] : -1;
+  // Force depuis win-screen (bouton "Menu") = enregistrer stats des non-clôturés
+  // Force depuis bannière "Abandon" = partie abandonnée, aucune stat
+  // On distingue les deux cas : si finishOrder a des entrées = quelqu'un a clôturé = vrai abandon post-victoire
+  const someoneFinished = gs && gs.finishOrder && gs.finishOrder.length > 0;
+  if(force && gameActive && gs && (gs.players||gs.teams) && someoneFinished){
+    // Quelqu'un a clôturé → enregistrer NC pour les autres
+    const winnerId = gs.finishOrder[0];
     if(gs.isTeam){
       gs.teams.forEach((t,i)=>{
         if(i===winnerId) return;
@@ -1160,6 +1163,26 @@ function backToSetup(force=false){
         recordGameStat(p.name,false,p.dartsThisGame||0,null,Math.max(0,cur-prev),nc,nc?0:p.checkoutDarts||0);
       });
     }
+  }
+  // Si personne n'a clôturé (abandon pur) → annuler les stats accumulées pendant la partie
+  if(force && gameActive && gs && !someoneFinished){
+    // Annuler realPoints et totalDarts accumulés pendant cette partie abandonnée
+    const s = loadStatsLocal();
+    const names = gs.isTeam ? gs.teams.flatMap(t=>t.members) : (gs.players||[]).map(p=>p.name);
+    names.forEach(name=>{
+      if(!s[name]) return;
+      const prev = (gs.realPtsBefore&&gs.realPtsBefore[name])||0;
+      const cur = s[name].realPoints||0;
+      const diff = Math.max(0, cur - prev);
+      s[name].realPoints = Math.max(0, cur - diff);
+      s[name].totalPoints = Math.max(0, (s[name].totalPoints||0) - diff);
+      // totalDarts accumulés cette partie
+      const darts = gs.isTeam
+        ? (gs.teams.find(t=>t.members.includes(name))||{}).dartsThisGame||0
+        : (gs.players.find(p=>p.name===name)||{}).dartsThisGame||0;
+      s[name].totalDarts = Math.max(0, (s[name].totalDarts||0) - darts);
+    });
+    saveStats(s);
   }
   gameActive=false;
   clearGameState();
