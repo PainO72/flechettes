@@ -927,10 +927,9 @@ function mergeStats(a, b){ return aggregateStats(a, b); }
 function updateSyncBadge(){
   const badge = document.getElementById('syncBadge');
   const label = document.getElementById('syncBadgeLabel');
-  // Vérifier aussi localStorage pour robustesse
+  // Le badge se base sur localStorage (immédiat) et non sur syncEnabled (async)
   const savedCode = localStorage.getItem('fl_sync_code');
-  const isConnected = syncEnabled && !!savedCode;
-  if(isConnected){
+  if(savedCode){
     badge.classList.add('connected');
     label.textContent = 'Session ' + savedCode;
   } else {
