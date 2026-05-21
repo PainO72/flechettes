@@ -618,6 +618,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 
 <!-- ══════════════ SYNC SCREEN ══════════════ -->
 <div id="sync-screen">
+  <button onclick="skipSync()" style="position:absolute;top:20px;left:20px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px 14px;color:var(--muted);font-size:16px;cursor:pointer">←</button>
   <div class="sync-icon">🔗</div>
   <div class="sync-title">Synchronisation</div>
   <div class="sync-sub" id="syncSubText">Choisissez un code unique pour votre session.<br>Entrez le même code sur chaque appareil<br>pour partager vos statistiques.</div>
@@ -823,7 +824,10 @@ async function connectSync(){
     syncGroupId = 'g_' + code;
     syncEnabled = true;
     localStorage.setItem('fl_sync_code', code);
+    // Upload les stats locales de cet appareil
     await pushLocalStatsToCloud();
+    // Agréger tous les appareils du groupe en local
+    await pullAndMergeFromCloud();
     status.textContent = '✓ Connecté ! Session ' + code;
     status.className = 'sync-status ok';
     updateSyncBadge();
@@ -834,52 +838,101 @@ async function connectSync(){
   }
 }
 
+// ── ID unique par appareil ──
+function getDeviceId(){
+  let id = localStorage.getItem('fl_device_id');
+  if(!id){
+    id = 'dev_' + Math.random().toString(36).slice(2,10);
+    localStorage.setItem('fl_device_id', id);
+  }
+  return id;
+}
+
+// ── Upload : écrire UNIQUEMENT les stats de cet appareil dans Firebase ──
 async function pushLocalStatsToCloud(){
   if(!syncEnabled || !db) return;
   const local = loadStatsLocal();
   if(!Object.keys(local).length) return;
   try {
     const ref = db.collection('fl_groups').doc(syncGroupId);
-    const snap = await ref.get();
-    const cloud = snap.exists ? (snap.data().stats || {}) : {};
-    // Fusionner : additionner les valeurs numériques, concaténer les tableaux
-    const merged = mergeStats(cloud, local);
-    await ref.set({ stats: merged });
-    saveStatsLocal(merged);
+    // Écrire les stats de cet appareil sous sa clé unique
+    await ref.set({ ['device_' + getDeviceId()]: local }, { merge: true });
+    // Récupérer et fusionner TOUS les appareils du groupe
+    await pullAndMergeFromCloud();
   } catch(e){ console.warn('pushLocalStatsToCloud:', e); }
 }
 
-function mergeStats(a, b){
-  // Pour chaque joueur dans b, fusionner avec a
+// ── Pull : lire tous les appareils et fusionner en local ──
+async function pullAndMergeFromCloud(){
+  if(!syncEnabled || !db) return;
+  try {
+    const ref = db.collection('fl_groups').doc(syncGroupId);
+    const snap = await ref.get();
+    if(!snap.exists) return;
+    const data = snap.data();
+    // Agréger les stats de tous les appareils
+    let merged = {};
+    for(const key of Object.keys(data)){
+      if(key.startsWith('device_')){
+        merged = aggregateStats(merged, data[key]);
+      }
+    }
+    if(Object.keys(merged).length){
+      saveStatsLocal(merged);
+    }
+  } catch(e){ console.warn('pullAndMergeFromCloud:', e); }
+}
+
+// ── Agrégation : additionner les stats de deux appareils ──
+function aggregateStats(a, b){
+  // a = stats agrégées jusqu'ici, b = stats d'un appareil
   const result = JSON.parse(JSON.stringify(a));
   for(const name of Object.keys(b)){
     if(!result[name]){
-      result[name] = b[name];
+      result[name] = JSON.parse(JSON.stringify(b[name]));
     } else {
       const r = result[name], src = b[name];
-      r.games = Math.max(r.games||0, src.games||0);
-      r.wins = Math.max(r.wins||0, src.wins||0);
-      r.totalDarts = Math.max(r.totalDarts||0, src.totalDarts||0);
-      r.totalPoints = Math.max(r.totalPoints||0, src.totalPoints||0);
-      r.turns = Math.max(r.turns||0, src.turns||0);
-      // Combiner closingDarts (prendre le plus long)
-      if((src.closingDarts||[]).length > (r.closingDarts||[]).length)
-        r.closingDarts = src.closingDarts;
-      // Combiner numberHits
+      // Cumulatifs : ADDITIONNER (chaque appareil a ses propres parties)
+      r.games       = (r.games||0)       + (src.games||0);
+      r.wins        = (r.wins||0)        + (src.wins||0);
+      r.totalDarts  = (r.totalDarts||0)  + (src.totalDarts||0);
+      r.totalPoints = (r.totalPoints||0) + (src.totalPoints||0);
+      r.realPoints  = (r.realPoints||0)  + (src.realPoints||0);
+      r.turns       = (r.turns||0)       + (src.turns||0);
+      // Records : prendre le meilleur
+      r.bestTurn    = Math.max(r.bestTurn||0,    src.bestTurn||0);
+      r.bestGameAvg = Math.max(r.bestGameAvg||0, src.bestGameAvg||0);
+      // Dernière partie : la plus récente (lastGameDarts > 0)
+      if((src.lastGameDarts||0) > 0){
+        r.lastGameDarts   = src.lastGameDarts;
+        r.lastGameRealPts = src.lastGameRealPts||0;
+      }
+      // closingDarts : concaténer et garder les 30 dernières
+      const cd = [...(r.closingDarts||[]), ...(src.closingDarts||[])];
+      r.closingDarts = cd.slice(-30);
+      // numberHits : additionner
       if(!r.numberHits) r.numberHits = {};
-      for(const k of Object.keys(src.numberHits||{}))
-        r.numberHits[k] = Math.max(r.numberHits[k]||0, src.numberHits[k]||0);
+      for(const k of Object.keys(src.numberHits||{})){
+        r.numberHits[k] = (r.numberHits[k]||0) + (src.numberHits[k]||0);
+      }
+      if(src.members) r.members = src.members;
     }
   }
   return result;
 }
 
+// Compatibilité avec l'ancien code qui appelle mergeStats
+function mergeStats(a, b){ return aggregateStats(a, b); }
+
 function updateSyncBadge(){
   const badge = document.getElementById('syncBadge');
   const label = document.getElementById('syncBadgeLabel');
-  if(syncEnabled){
+  // Vérifier aussi localStorage pour robustesse
+  const savedCode = localStorage.getItem('fl_sync_code');
+  const isConnected = syncEnabled && !!savedCode;
+  if(isConnected){
     badge.classList.add('connected');
-    label.textContent = 'Session ' + localStorage.getItem('fl_sync_code');
+    label.textContent = 'Session ' + savedCode;
   } else {
     badge.classList.remove('connected');
     label.textContent = 'Non synchronisé';
@@ -908,7 +961,9 @@ async function saveStats(s){
   saveStatsLocal(s);
   if(syncEnabled && db){
     try {
-      await db.collection('fl_groups').doc(syncGroupId).set({ stats: s });
+      // Écrire uniquement les stats de cet appareil (jamais d'écrasement)
+      const ref = db.collection('fl_groups').doc(syncGroupId);
+      await ref.set({ ['device_' + getDeviceId()]: s }, { merge: true });
     } catch(e){ console.warn('saveStats cloud fail:', e); }
   }
 }
@@ -2056,10 +2111,10 @@ function restoreGameState(){
     if(initFirebase()){
       syncGroupId = 'g_' + savedCode;
       syncEnabled = true;
-      try {
-        const snap = await db.collection('fl_groups').doc(syncGroupId).get();
-        if(snap.exists) saveStatsLocal(snap.data().stats||{});
-      } catch(e){}
+      // D'abord uploader les stats locales de cet appareil
+      await pushLocalStatsToCloud();
+      // Puis agréger tous les appareils du groupe
+      await pullAndMergeFromCloud();
       updateSyncBadge();
     }
   }
