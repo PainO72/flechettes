@@ -830,9 +830,8 @@ async function connectSync(){
     syncGroupId = 'g_' + code;
     syncEnabled = true;
     localStorage.setItem('fl_sync_code', code);
-    // Pull le cloud si plus récent, sinon push le local
-    const pulled = await pullFromCloud();
-    if(!pulled) await pushLocalStatsToCloud();
+    // Fusionner local + cloud (par joueur)
+    await pushLocalStatsToCloud();
     status.textContent = '✓ Connecté ! Session ' + code;
     status.className = 'sync-status ok';
     updateSyncBadge();
@@ -849,16 +848,60 @@ async function connectSync(){
 // Suppression = écriture avec données vides + timestamp récent
 // ══════════════════════════════════════════════════════
 
+// ══════════════════════════════════════════════════════
+// SYNC — Fusion par joueur avec timestamp individuel
+// Structure Firebase :
+// { players: { "Pierre": { ...stats, _ts: 1234567 }, "Marie": { ...stats, _ts: 1234568 } } }
+// Chaque joueur a son propre timestamp.
+// Fusion : pour chaque joueur, on prend la version avec le _ts le plus récent.
+// → Impossible de perdre les données d'un joueur en jouant sur deux appareils en parallèle.
+// ══════════════════════════════════════════════════════
+
+function getLocalTimestamps(){
+  try{ return JSON.parse(localStorage.getItem('fl_stats_ts_map')||'{}'); }
+  catch(e){ return {}; }
+}
+function saveLocalTimestamps(map){
+  try{ localStorage.setItem('fl_stats_ts_map', JSON.stringify(map)); }
+  catch(e){}
+}
+
+// Fusion de deux objets stats : pour chaque joueur, prend la version la plus récente
+function mergeByPlayer(local, cloud){
+  const result = JSON.parse(JSON.stringify(local));
+  for(const name of Object.keys(cloud)){
+    const cloudPlayer = cloud[name];
+    const cloudTs = cloudPlayer._ts || 0;
+    const localTs = (result[name] && result[name]._ts) || 0;
+    if(cloudTs > localTs){
+      result[name] = cloudPlayer; // le cloud est plus récent pour ce joueur
+    }
+  }
+  return result;
+}
+
+// Filtre les joueurs supprimés (_deleted:true) pour l'affichage
+function filterDeleted(stats){
+  const result = {};
+  for(const name of Object.keys(stats)){
+    if(!stats[name]._deleted) result[name] = stats[name];
+  }
+  return result;
+}
+
 async function pushLocalStatsToCloud(){
   if(!syncEnabled || !db) return;
   const local = loadStatsLocal();
+  if(!Object.keys(local).length) return;
   try {
     const ref = db.collection('fl_groups').doc(syncGroupId);
-    // On écrit stats + timestamp. La version la plus récente gagne.
-    await ref.set({
-      stats: local,
-      updatedAt: Date.now()
-    }, { merge: false }); // pas de merge : on écrase avec la version locale
+    // Lire le cloud d'abord pour fusionner
+    const snap = await ref.get();
+    const cloud = snap.exists ? (snap.data().players || {}) : {};
+    const merged = mergeByPlayer(local, cloud);
+    // Sauvegarder la fusion en local et en cloud
+    saveStatsLocal(merged);
+    await ref.set({ players: merged }, { merge: false });
   } catch(e){ console.warn('pushLocalStatsToCloud:', e); }
 }
 
@@ -868,22 +911,16 @@ async function pullFromCloud(){
     const ref = db.collection('fl_groups').doc(syncGroupId);
     const snap = await ref.get();
     if(!snap.exists) return false;
-    const data = snap.data();
-    const cloudTs = data.updatedAt || 0;
-    const localTs = parseInt(localStorage.getItem('fl_stats_ts')||'0');
-    // Prendre la version la plus récente
-    if(cloudTs > localTs && data.stats){
-      saveStatsLocal(data.stats);
-      localStorage.setItem('fl_stats_ts', String(cloudTs));
-      return true;
-    }
-    return false;
+    const cloud = snap.data().players || {};
+    if(!Object.keys(cloud).length) return false;
+    const local = loadStatsLocal();
+    const merged = mergeByPlayer(local, cloud);
+    saveStatsLocal(merged);
+    return true;
   } catch(e){ console.warn('pullFromCloud:', e); return false; }
 }
 
 async function getAggregatedStats(){
-  // Avec la nouvelle stratégie, le cloud = une seule source de vérité
-  // On tire les stats depuis le cloud si plus récentes
   await pullFromCloud();
   return loadStatsLocal();
 }
@@ -892,9 +929,7 @@ async function pullAndMergeFromCloud(){
   await pullFromCloud();
 }
 
-// Compatibilité
-function mergeStats(a, b){ return b; }
-function aggregateStats(a, b){ return b; }
+function aggregateStats(a, b){ return mergeByPlayer(a, b); }
 
 function updateSyncBadge(){
   const badge = document.getElementById('syncBadge');
@@ -915,27 +950,28 @@ function loadStatsLocal(){try{return JSON.parse(localStorage.getItem('fl_stats')
 function saveStatsLocal(s){try{localStorage.setItem('fl_stats',JSON.stringify(s))}catch(e){}}
 
 async function loadStats(){
-  if(syncEnabled && db){
-    try {
-      const snap = await db.collection('fl_groups').doc(syncGroupId).get();
-      if(snap.exists){
-        const s = snap.data().stats || {};
-        saveStatsLocal(s); // cache local
-        return s;
-      }
-    } catch(e){ console.warn('loadStats cloud fail, using local'); }
-  }
+  await pullFromCloud();
   return loadStatsLocal();
 }
 
 async function saveStats(s){
   const ts = Date.now();
-  saveStatsLocal(s);
-  localStorage.setItem('fl_stats_ts', String(ts));
+  // Ajouter un timestamp individuel à chaque joueur modifié
+  const stamped = JSON.parse(JSON.stringify(s));
+  for(const name of Object.keys(stamped)){
+    stamped[name]._ts = ts;
+  }
+  saveStatsLocal(stamped);
   if(syncEnabled && db){
     try {
       const ref = db.collection('fl_groups').doc(syncGroupId);
-      await ref.set({ stats: s, updatedAt: ts });
+      // Lire, fusionner, écrire
+      const snap = await ref.get();
+      const cloud = snap.exists ? (snap.data().players || {}) : {};
+      const merged = mergeByPlayer(stamped, cloud);
+      // stamped est plus récent pour les joueurs modifiés → il gagne
+      await ref.set({ players: merged }, { merge: false });
+      saveStatsLocal(merged);
     } catch(e){ console.warn('saveStats cloud fail:', e); }
   }
 }
@@ -952,7 +988,8 @@ function emptyPlayer(){return{games:0,wins:0,nc:0,totalDarts:0,closingDarts:[],n
 
 function recordThrowStat(playerName, label, pts){
   const s=loadStatsLocal();
-  if(!s[playerName])s[playerName]=emptyPlayer();
+  // Si le joueur était marqué supprimé, on repart de zéro
+  if(!s[playerName] || s[playerName]._deleted) s[playerName]=emptyPlayer();
   const p=s[playerName];
   p.totalDarts=(p.totalDarts||0)+1;
   p.totalPoints=(p.totalPoints||0)+pts;
@@ -974,7 +1011,7 @@ function recordThrowStat(playerName, label, pts){
 }
 function recordTurnStat(playerName, turnTotal){
   const s=loadStatsLocal();
-  if(!s[playerName])s[playerName]=emptyPlayer();
+  if(!s[playerName] || s[playerName]._deleted) s[playerName]=emptyPlayer();
   const p=s[playerName];
   p.turns=(p.turns||0)+1;
   // Meilleur tour (volée)
@@ -984,16 +1021,14 @@ function recordTurnStat(playerName, turnTotal){
   saveStats(s);
 }
 function recordGameStat(playerName, won, dartsUsed, members=null, realPtsThisGame=0, notClosed=false, checkoutDartsUsed=0){
-  // Empêcher les doubles enregistrements pour la même partie
   const recordKey = playerName;
   if(gs && gs.statsRecorded && gs.statsRecorded.has(recordKey)){
-    console.log('recordGameStat SKIP (already recorded):', playerName);
     return;
   }
   if(gs && gs.statsRecorded) gs.statsRecorded.add(recordKey);
 
   const s=loadStatsLocal();
-  if(!s[playerName])s[playerName]=emptyPlayer();
+  if(!s[playerName] || s[playerName]._deleted) s[playerName]=emptyPlayer();
   const p=s[playerName];
   // En solo, on n'enregistre pas les parties/victoires/défaites
   if(!gs || !gs.isSolo){
@@ -1018,8 +1053,9 @@ async function clearStats(){
   if(!selectedStatPlayer)return;
   if(confirm('Effacer les statistiques de '+selectedStatPlayer+' ?')){
     const s=loadStatsLocal();
-    delete s[selectedStatPlayer];
-    await saveStats(s); // attendre la fin de l'upload avant de raffraichir
+    // Marquer comme supprimé avec timestamp récent (propagé sur tous les appareils)
+    s[selectedStatPlayer] = { _deleted: true, _ts: Date.now() };
+    await saveStats(s);
     selectedStatPlayer=null;
     renderStats();
   }
@@ -1651,7 +1687,7 @@ function addThrow(n){
 function undoStatThrow(pName, t){
   // Annule la stat d'un lancer
   const s=loadStatsLocal();
-  if(s[pName]){
+  if(s[pName] && !s[pName]._deleted){
     s[pName].totalDarts=Math.max(0,(s[pName].totalDarts||1)-1);
     s[pName].totalPoints=Math.max(0,(s[pName].totalPoints||0)-t.pts);
     s[pName].realPoints=Math.max(0,(s[pName].realPoints||0)-t.pts);
@@ -1951,7 +1987,8 @@ function replayGame(){
 let selectedStatPlayer=null;
 
 async function renderStats(){
-  const stats = await getAggregatedStats();
+  const raw = await getAggregatedStats();
+  const stats = filterDeleted(raw);
   const players=Object.keys(stats);
   const sel=document.getElementById('statPlayerSelect');
   sel.innerHTML='';
@@ -2256,9 +2293,8 @@ function restoreGameState(){
     if(initFirebase()){
       syncGroupId = 'g_' + savedCode;
       syncEnabled = true;
-      // Récupérer le cloud si plus récent, sinon pousser le local
-      const pulled = await pullFromCloud();
-      if(!pulled) await pushLocalStatsToCloud();
+      // Fusionner local + cloud dans les deux sens
+      await pushLocalStatsToCloud();
       updateSyncBadge();
     }
   }
