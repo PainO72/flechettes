@@ -265,6 +265,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 .pc-name{font-size:10px;color:var(--muted);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
 .player-card.active .pc-name{color:var(--accent)}
 .pc-score{font-family:var(--mono);font-size:22px;font-weight:500;color:var(--text);line-height:1}
+.pc-live{font-family:var(--mono);font-size:15px;font-weight:600;color:#3ecf7a;line-height:1;margin-top:3px;min-height:18px}
+.tc-live{font-family:var(--mono);font-size:13px;font-weight:600;color:#3ecf7a;line-height:1;margin-top:2px;min-height:16px}
 .pc-legs{font-size:9px;color:var(--muted);margin-top:3px;font-family:var(--mono)}
 
 /* Checkout */
@@ -679,8 +681,20 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 // ══════════════════════════════════════════════════════
 // CHECKOUT DB
 // ══════════════════════════════════════════════════════
+// ─────────────────────────────────────────────
+// BASE DE DONNÉES DES COMBINAISONS DE SORTIE
+// Contient les meilleures combinaisons pour clôturer
+// en mode Double/Master (scores 2 à 170)
+// ─────────────────────────────────────────────
 const CHECKOUTS={170:["T20 T20 B25"],167:["T20 T19 B25"],164:["T20 T18 B25"],161:["T20 T17 B25"],160:["T20 T20 D20"],158:["T20 T20 D19"],157:["T20 T19 D20"],156:["T20 T20 D18"],155:["T20 T19 D19"],154:["T20 T18 D20"],153:["T20 T19 D18"],152:["T20 T20 D16"],151:["T20 T19 D17"],150:["T20 T18 D18"],149:["T20 T19 D16"],148:["T20 T20 D14"],147:["T20 T17 D18"],146:["T20 T18 D16"],145:["T20 T15 D20"],144:["T20 T20 D12"],143:["T20 T17 D16"],142:["T20 T14 D20"],141:["T20 T15 D18"],140:["T20 T20 D10"],139:["T20 T19 D11"],138:["T20 T18 D12"],137:["T20 T19 D10"],136:["T20 T20 D8"],135:["T20 T17 D12"],134:["T20 T14 D16"],133:["T20 T19 D8"],132:["T20 T16 D12"],131:["T20 T13 D16"],130:["T20 T18 D8"],129:["T20 T19 D6"],128:["T20 T16 D10"],127:["T20 T17 D8"],126:["T20 T16 D9"],125:["T20 T15 D10"],124:["T20 T16 D8"],123:["T20 T13 D12"],122:["T18 T18 D7"],121:["T20 T11 D14"],120:["T20 S20 D20"],119:["T19 T12 D13"],118:["T20 S18 D20"],117:["T20 S17 D20"],116:["T20 S16 D20"],115:["T20 S15 D20"],114:["T20 S14 D20"],113:["T20 S13 D20"],112:["T20 S12 D20"],111:["T20 S11 D20"],110:["T20 S10 D20"],109:["T20 S9 D20"],108:["T20 S8 D20"],107:["T20 S7 D20"],106:["T20 S6 D20"],105:["T20 S5 D20"],104:["T20 S4 D20"],103:["T20 S3 D20"],102:["T20 S2 D20"],101:["T20 S1 D20"],100:["T20 D20"],99:["T19 S10 D16"],98:["T20 D19"],97:["T19 D20"],96:["T20 D18"],95:["T19 D19"],94:["T18 D20"],93:["T19 D18"],92:["T20 D16"],91:["T17 D20"],90:["T18 D18","T20 D15"],89:["T19 D16"],88:["T20 D14","T16 D20"],87:["T17 D18","T19 D15"],86:["T18 D16"],85:["T15 D20","T19 D14"],84:["T20 D12","T16 D18"],83:["T17 D16"],82:["T14 D20","T18 D14"],81:["T19 D12"],80:["T20 D10","T16 D16"],79:["T13 D20"],78:["T18 D12"],77:["T19 D10"],76:["T20 D8"],75:["T17 D12"],74:["T14 D16"],73:["T19 D8"],72:["T16 D12"],71:["T13 D16"],70:["T18 D8","T10 D20"],69:["T19 D6"],68:["T20 D4"],67:["T17 D8"],66:["T10 D18"],65:["T19 D4"],64:["T16 D8"],63:["T13 D12"],62:["T10 D16"],61:["T15 D8"],60:["S20 D20"],59:["S19 D20"],58:["S18 D20"],57:["S17 D20"],56:["S16 D20"],55:["S15 D20"],54:["S14 D20"],53:["S13 D20"],52:["S12 D20"],51:["S11 D20"],50:["B25","S10 D20"],49:["S9 D20"],48:["S16 D16"],47:["S15 D16"],46:["S6 D20"],45:["S13 D16"],44:["S12 D16"],43:["S11 D16"],42:["S10 D16"],41:["S9 D16"],40:["D20"],39:["S7 D16"],38:["D19"],37:["S5 D16"],36:["D18"],35:["S3 D16"],34:["D17"],33:["S1 D16"],32:["D16"],31:["S15 D8"],30:["D15"],29:["S13 D8"],28:["D14"],27:["S11 D8"],26:["D13"],25:["S9 D8"],24:["D12"],23:["S7 D8"],22:["D11"],21:["S5 D8"],20:["D10"],18:["D9"],16:["D8"],14:["D7"],12:["D6"],10:["D5"],8:["D4"],6:["D3"],4:["D2"],2:["D1"]};
 
+// ─────────────────────────────────────────────
+// CONSEILS DE SORTIE
+// Calcule les combinaisons suggérées pour clôturer
+// selon le score restant et le mode de fin
+// - Mode simple : trouve la combo la plus rapide et la plus simple
+// - Mode double/master : utilise la base CHECKOUTS
+// ─────────────────────────────────────────────
 function getCheckout(score,fin){
   if(score>170||score<1)return[];
 
@@ -764,12 +778,21 @@ function getCheckout(score,fin){
 // ══════════════════════════════════════════════════════
 // CONSTANTES
 // ══════════════════════════════════════════════════════
+// ─────────────────────────────────────────────
+// CONSTANTES ÉQUIPES
+// Couleurs et noms par défaut des équipes
+// ─────────────────────────────────────────────
 const TCOLS=['#e8c547','#4799e8','#47c47e','#e85447'];
 const TNAMES=['Équipe A','Équipe B','Équipe C','Équipe D'];
 
 // ══════════════════════════════════════════════════════
 // FIREBASE CONFIG
 // ══════════════════════════════════════════════════════
+// ─────────────────────────────────────────────
+// CONFIGURATION FIREBASE
+// Remplacez ces valeurs par celles de votre projet Firebase
+// (console.firebase.google.com → Paramètres → Vos applications)
+// ─────────────────────────────────────────────
 const FIREBASE_CFG = {
   apiKey: "AIzaSyDjBwqUnR7B3u1OfCWykdhA7wRGTq6J6Tc",
   authDomain: "flechettes-d6ac1.firebaseapp.com",
@@ -842,6 +865,12 @@ async function connectSync(){
   }
 }
 
+// ─────────────────────────────────────────────
+// SYNCHRONISATION ENTRE APPAREILS
+// Stratégie : fusion par joueur avec timestamp individuel
+// Chaque joueur a son propre _ts (horodatage)
+// La version la plus récente par joueur gagne toujours
+// ─────────────────────────────────────────────
 // ══════════════════════════════════════════════════════
 // SYNC — Stratégie : un seul document "stats" avec timestamp
 // La dernière écriture (timestamp le plus récent) gagne toujours
@@ -946,6 +975,9 @@ function updateSyncBadge(){
 }
 
 // ── Fonctions de stockage (local + cloud) ──
+// ─────────────────────────────────────────────
+// STOCKAGE LOCAL DES STATISTIQUES
+// ─────────────────────────────────────────────
 function loadStatsLocal(){try{return JSON.parse(localStorage.getItem('fl_stats')||'{}')}catch(e){return{}}}
 function saveStatsLocal(s){try{localStorage.setItem('fl_stats',JSON.stringify(s))}catch(e){}}
 
@@ -986,6 +1018,8 @@ function getPlayerStats(name){
 }
 function emptyPlayer(){return{games:0,wins:0,nc:0,totalDarts:0,closingDarts:[],numberHits:{},turns:0,totalPoints:0,realPoints:0,bestTurn:0,lastGameDarts:0,lastGameRealPts:0,bestGameAvg:0};}
 
+// Enregistre les stats d'un lancer individuel
+// (zones touchées, points réels, nombre de fléchettes)
 function recordThrowStat(playerName, label, pts){
   const s=loadStatsLocal();
   // Si le joueur était marqué supprimé, on repart de zéro
@@ -1009,6 +1043,8 @@ function recordThrowStat(playerName, label, pts){
   if(hitKey!==null){if(!p.numberHits)p.numberHits={};p.numberHits[hitKey]=(p.numberHits[hitKey]||0)+1;}
   saveStats(s); // async fire-and-forget
 }
+// Enregistre les stats d'un tour complet (volée de 3 fléchettes)
+// Met à jour la meilleure volée si applicable
 function recordTurnStat(playerName, turnTotal){
   const s=loadStatsLocal();
   if(!s[playerName] || s[playerName]._deleted) s[playerName]=emptyPlayer();
@@ -1020,6 +1056,9 @@ function recordTurnStat(playerName, turnTotal){
   }
   saveStats(s);
 }
+// Enregistre le résultat d'une partie pour un joueur
+// won=true → Victoire, notClosed=true → NC (non clôturé), sinon → Défaite
+// Protégé contre les doubles enregistrements (gs.statsRecorded)
 function recordGameStat(playerName, won, dartsUsed, members=null, realPtsThisGame=0, notClosed=false, checkoutDartsUsed=0){
   const recordKey = playerName;
   if(gs && gs.statsRecorded && gs.statsRecorded.has(recordKey)){
@@ -1049,6 +1088,7 @@ function recordGameStat(playerName, won, dartsUsed, members=null, realPtsThisGam
   }
   saveStats(s);
 }
+// Supprime les stats d'un joueur (marquage _deleted pour propagation cloud)
 async function clearStats(){
   if(!selectedStatPlayer)return;
   if(confirm('Effacer les statistiques de '+selectedStatPlayer+' ?')){
@@ -1065,6 +1105,11 @@ async function clearStats(){
 // NAVIGATION
 // ══════════════════════════════════════════════════════
 let currentPage='setup';
+// ─────────────────────────────────────────────
+// NAVIGATION ENTRE LES PAGES
+// Gère l'affichage des pages setup / game / stats
+// et met à jour la barre de navigation
+// ─────────────────────────────────────────────
 function navTo(page){
   // Cacher toutes les pages
   ['setup','stats'].forEach(id=>{
@@ -1098,6 +1143,8 @@ function updateResumeBar(){
 // Enregistre les stats de fin de partie pour tous les joueurs
 // winner = index du 1er ayant clôturé (finishOrder[0]) ou -1
 // closedIdx = liste des indices ayant clôturé (finishOrder)
+// Enregistre les stats de fin de partie pour TOUS les joueurs
+// Appelé depuis showFinalRanking et confirmEndGame
 function recordAllGameStats(){
   if(!gs || (!gs.players && !gs.teams)) return;
   const winnerId = gs.finishOrder.length>0 ? gs.finishOrder[0] : -1;
@@ -1135,6 +1182,8 @@ function recordAllGameStats(){
   }
 }
 
+// Bouton "Terminer" pendant la partie
+// Enregistre les stats (NC pour les non-clôturés) et retourne au menu
 function confirmEndGame(){
   if(!confirm('Terminer la partie ? Les joueurs non clôturés seront comptés NC.')) return;
   // En solo : sauvegarder les stats avant de quitter
@@ -1175,6 +1224,9 @@ function confirmEndGame(){
   navTo('setup');
 }
 
+// Retour au menu principal
+// force=false → partie mise en pause (bouton ← pendant la partie)
+// force=true  → abandon définitif (bouton Menu sur écran victoire)
 function backToSetup(force=false){
   document.getElementById('win-screen').style.display='none';
   document.querySelector('.bottom-nav').style.display='';
@@ -1242,12 +1294,14 @@ function backToSetup(force=false){
   navTo('setup');
 }
 
+// Affiche la bannière "Partie en cours" sur la page menu/stats
 function showResumeBar(){
   document.getElementById('resume-bar').style.display='flex';
 }
 function hideResumeBar(){
   document.getElementById('resume-bar').style.display='none';
 }
+// Reprend la partie en cours depuis la bannière de reprise
 function resumeGame(){
   hideResumeBar();
   document.getElementById('game-page').style.display='flex';
@@ -1265,6 +1319,11 @@ let cfg={mode:501,partyType:'solo',players:1,numTeams:2,fin:'simple'};
 let gameActive=false; // true quand une partie est en cours
 let gs={};
 
+// ─────────────────────────────────────────────
+// CONFIGURATION DE LA PARTIE (PAGE SETUP)
+// Gère les sélecteurs de mode, nombre de joueurs,
+// type de partie et saisie des noms
+// ─────────────────────────────────────────────
 function makePills(gid,key){
   document.getElementById(gid).querySelectorAll('.pill').forEach(p=>{
     p.addEventListener('click',()=>{
@@ -1284,6 +1343,8 @@ makePills('teamCounts','numTeams');
 makePills('finModes','fin');
 buildNames();
 
+// Bascule entre mode Individuel et mode Équipes
+// Affiche/masque les sections correspondantes
 function toggleMode(){
   const t=cfg.partyType!=='solo';
   document.getElementById('sectionPlayers').style.display=t?'none':'block';
@@ -1295,6 +1356,10 @@ function toggleMode(){
 // ══════════════════════════════════════════════════════
 // NOMS MÉMORISÉS
 // ══════════════════════════════════════════════════════
+// ─────────────────────────────────────────────
+// HISTORIQUE DES NOMS DE JOUEURS
+// Sauvegarde les noms utilisés pour l'autocomplétion
+// ─────────────────────────────────────────────
 function loadKnownPlayers(){try{return JSON.parse(localStorage.getItem('fl_players')||'[]')}catch(e){return[]}}
 function saveKnownPlayers(a){try{localStorage.setItem('fl_players',JSON.stringify(a))}catch(e){}}
 function addKnownPlayer(name){
@@ -1318,6 +1383,8 @@ function addKnownTeam(name){
 }
 
 // Crée un input avec suggestions intégré
+// Crée un champ de saisie avec liste déroulante d'autocomplétion
+// Affiche les noms déjà utilisés, filtre ceux déjà sélectionnés
 function makeInputWithSuggestions({id, placeholder, isTeam=false, color=null}){
   const known = isTeam ? loadKnownTeams() : loadKnownPlayers();
   const wrap = document.createElement('div');
@@ -1440,6 +1507,8 @@ function makeInputWithSuggestions({id, placeholder, isTeam=false, color=null}){
   return wrap;
 }
 
+// Construit les champs de saisie des noms de joueurs
+// avec autocomplétion depuis l'historique des noms
 function buildNames(){
   const c=document.getElementById('playerNames');c.innerHTML='';
   if(cfg.partyType==='solo'){
@@ -1481,6 +1550,11 @@ function buildNames(){
 // ══════════════════════════════════════════════════════
 // DÉMARRAGE
 // ══════════════════════════════════════════════════════
+// ─────────────────────────────────────────────
+// DÉMARRAGE D'UNE PARTIE
+// Initialise l'état du jeu selon la configuration
+// (mode solo/équipes, nombre de joueurs, mode de fin)
+// ─────────────────────────────────────────────
 function startGame(){
   const isTeam=cfg.partyType!=='solo';
   const ppt=cfg.partyType==='team2'?2:3;
@@ -1520,6 +1594,11 @@ function startGame(){
 // ══════════════════════════════════════════════════════
 // RENDU JEU
 // ══════════════════════════════════════════════════════
+// ─────────────────────────────────────────────
+// RENDU DE L'ÉCRAN DE JEU
+// Met à jour le scoreboard, les conseils de sortie,
+// les indicateurs de lancer et le clavier numérique
+// ─────────────────────────────────────────────
 function renderGame(){
   document.getElementById('modeBadge').textContent=gs.mode+' · '+gs.fin+(gs.isTeam?' · Équipes':'');
   gs.isTeam?renderSBTeams():renderSBSolo();
@@ -1547,6 +1626,8 @@ function renderGame(){
   document.getElementById('validateBtn').disabled=gs.throws.length===0;
 }
 
+// Rendu du scoreboard en mode Équipes
+// Affiche le score, le score live (pendant la volée), les membres
 function renderSBTeams(){
   const sb=document.getElementById('scoreboard');sb.innerHTML='';
   gs.teams.forEach((t,i)=>{
@@ -1561,12 +1642,21 @@ function renderSBTeams(){
   });
 }
 
+// Rendu du scoreboard en mode Individuel
+// Affiche le score principal et le score live sous le score actif
 function renderSBSolo(){
   const sb=document.getElementById('scoreboard');sb.innerHTML='';
+  const throwsTotal=gs.throws.reduce((s,t)=>s+t.pts,0);
   gs.players.forEach((pl,i)=>{
     const active=i===gs.cur,finished=pl.score===0;
-    const d=document.createElement('div');d.className='player-card'+(active?' active':'')+(finished?' finished':'');
-    d.innerHTML=`<div class="pc-name">${pl.name}</div><div class="pc-score">${finished?'✓':pl.score}</div><div class="pc-legs">${pl.legs} manche${pl.legs!==1?'s':''}</div>`;
+    const d=document.createElement('div');
+    d.className='player-card'+(active?' active':'')+(finished?' finished':'');
+    const liveScore = active && !finished && gs.throws.length>0 ? pl.score - throwsTotal : null;
+    const liveOk = liveScore!==null && (liveScore>1 || (liveScore===1&&gs.fin==='simple') || liveScore===0);
+    const liveHtml = active && !finished && gs.throws.length>0
+      ? `<div class="pc-live">${liveOk ? liveScore : '✗ bust'}</div>`
+      : `<div class="pc-live"></div>`;
+    d.innerHTML=`<div class="pc-name">${pl.name}</div><div class="pc-score">${finished?'✓':pl.score}</div>${liveHtml}<div class="pc-legs">${pl.legs} manche${pl.legs!==1?'s':''}</div>`;
     sb.appendChild(d);
   });
 }
@@ -1579,6 +1669,7 @@ function renderLog(){
   const tot=document.createElement('span');tot.className='throw-total';tot.textContent='−'+sum;log.appendChild(tot);
 }
 
+// Construit le clavier numérique (1-20, B25, Bull 50, Raté)
 function buildNumpad(){
   const pad=document.getElementById('numpad');pad.innerHTML='';
   [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,'B25','B50','0'].forEach(n=>{
@@ -1625,8 +1716,15 @@ function recordFinish(idx){
   }
 }
 
+// Active le multiplicateur Simple/Double/Triple
 function setMult(m){gs.mult=m;[1,2,3].forEach(x=>document.getElementById('m'+x).classList.toggle('active',x===m));}
 
+// ─────────────────────────────────────────────
+// SAISIE D'UN LANCER
+// Appelé à chaque appui sur un bouton du clavier
+// Calcule le score, vérifie le bust immédiat,
+// enregistre les stats et déclenche la victoire si score=0
+// ─────────────────────────────────────────────
 function addThrow(n){
   if(gs.throws.length>=3)return;
   let pts=0,label='';
@@ -1688,6 +1786,7 @@ function addThrow(n){
   if(gs.throws.length===3)endTurn();
 }
 
+// Annule les stats d'un lancer (appelé par undoThrow)
 function undoStatThrow(pName, t){
   // Annule la stat d'un lancer
   const s=loadStatsLocal();
@@ -1705,6 +1804,8 @@ function undoStatThrow(pName, t){
   }
 }
 
+// Annule le dernier lancer
+// Si la volée est vide → revient au tour du joueur précédent
 function undoThrow(){
   if(gs.throws.length>0){
     // Annuler le dernier lancer du joueur courant
@@ -1720,6 +1821,8 @@ function undoThrow(){
   }
 }
 
+// Revient au tour du joueur précédent
+// Restaure son score et ses 3 lancers pour modification
 function undoPreviousTurn(){
   if(!gs.turnHistory||!gs.turnHistory.length){
     flash('Impossible de revenir plus en arrière','err');
@@ -1752,12 +1855,18 @@ function undoPreviousTurn(){
   renderGame();
 }
 
+// Affiche un message flash (confirmation ou erreur) sous le scoreboard
 function flash(msg,type,dur=1800){
   const el=document.getElementById('flashMsg');
   el.textContent=msg;el.className='flash-msg '+type;el.style.display='block';
   setTimeout(()=>el.style.display='none',dur);
 }
 
+// ─────────────────────────────────────────────
+// VALIDATION D'UN TOUR
+// Vérifie le bust, applique le score,
+// enregistre les stats et passe au joueur suivant
+// ─────────────────────────────────────────────
 function endTurn(){
   if(!gs.throws.length)return;
   const total=gs.throws.reduce((s,t)=>s+t.pts,0);
@@ -1793,6 +1902,9 @@ function endTurn(){
   setTimeout(nextTurn,1400);
 }
 
+// Passe au joueur/équipe suivant(e)
+// Sauvegarde le tour dans l'historique (pour le retour arrière)
+// Saute les joueurs/équipes déjà clôturés
 function nextTurn(){
   // Sauvegarder le tour dans l'historique pour permettre le retour arrière
   const pName=curPlayerName();
@@ -1828,6 +1940,8 @@ function nextTurn(){
 // ══════════════════════════════════════════════════════
 // FIN DE MANCHE
 // ══════════════════════════════════════════════════════
+// Gère la fin d'une manche (quand un joueur clôture)
+// Décide si on affiche l'écran de victoire ou si on continue
 function handleRoundEnd(){
   if(gs.isSolo){ saveStats(loadStatsLocal()); }
   const multi=gs.isTeam?gs.teams.length>1:gs.players.length>1;
@@ -1849,6 +1963,8 @@ function handleRoundEnd(){
   document.getElementById('continueBtn').style.display='block';
 }
 
+// Affiche le classement final avec les rangs V/D/NC
+// Enregistre les stats pour tous les non-gagnants
 function showFinalRanking(){
   // En solo : sauvegarder les stats locales (realPoints/totalDarts accumulés)
   if(gs.isSolo){
@@ -1892,6 +2008,8 @@ function showFinalRanking(){
   renderWinGameStats();
 }
 
+// Affiche les stats de la partie qui vient de se terminer
+// (sur l'écran de victoire)
 function renderWinGameStats(){
   const el=document.getElementById('win-game-stats');
   if(!el)return;
@@ -1932,6 +2050,7 @@ function renderWinGameStats(){
   el.innerHTML=html;
 }
 
+// Construit le tableau de classement (podium, scores, statuts)
 function renderWinTable(){
   document.getElementById('winHead').innerHTML=gs.isTeam
     ?'<th>Équipe</th><th>Joueurs</th><th>Manches</th><th>Rang</th><th>Score</th>'
@@ -1959,6 +2078,8 @@ function renderWinTable(){
   });
 }
 
+// Continue la partie pour les joueurs qui n'ont pas encore clôturé
+// Appelé depuis le bouton "Laisser les autres finir"
 function continueRound(){
   document.querySelector('.bottom-nav').style.display='';
   gs.throws=[];gs.mult=1;
@@ -1977,6 +2098,7 @@ function continueRound(){
   renderGame();
 }
 
+// Rejoue avec les mêmes joueurs, remet les scores à zéro
 function replayGame(){
   clearGameState();
   if(gs) gs.statsRecorded = new Set();
@@ -1995,6 +2117,11 @@ function replayGame(){
 // ══════════════════════════════════════════════════════
 let selectedStatPlayer=null;
 
+// ─────────────────────────────────────────────
+// PAGE STATISTIQUES
+// Charge et affiche les stats du joueur sélectionné
+// Récupère les données depuis Firebase si synchronisé
+// ─────────────────────────────────────────────
 async function renderStats(){
   const raw = await getAggregatedStats();
   const stats = filterDeleted(raw);
@@ -2201,6 +2328,7 @@ function launchConfetti(){
 // ══════════════════════════════════════════════════════
 // PLEIN ÉCRAN
 // ══════════════════════════════════════════════════════
+// Bascule entre mode plein écran et mode normal
 function toggleFullscreen(){
   if(!document.fullscreenElement && !document.webkitFullscreenElement){
     // Entrer en plein écran
@@ -2214,6 +2342,7 @@ function toggleFullscreen(){
   }
 }
 
+// Met à jour l'icône des boutons plein écran
 function updateFullscreenBtns(){
   const isFs=!!(document.fullscreenElement||document.webkitFullscreenElement);
   const icon = isFs ? '⛿' : '⛶';
@@ -2235,11 +2364,14 @@ function updateThemeBtns(isLight){
   });
   document.querySelector('meta[name="theme-color"]').content=isLight?'#f4f3ef':'#0a0a0c';
 }
+// Bascule entre mode sombre et mode lumineux
+// Sauvegarde le choix en localStorage
 function toggleTheme(){
   const isLight=document.body.classList.toggle('light');
   localStorage.setItem('fl_theme',isLight?'light':'dark');
   updateThemeBtns(isLight);
 }
+// Applique le thème sauvegardé (sombre/lumineux) au démarrage
 (function initTheme(){
   const saved=localStorage.getItem('fl_theme');
   if(saved==='light'){
@@ -2254,6 +2386,11 @@ function toggleTheme(){
 // ══════════════════════════════════════════════════════
 // PERSISTANCE DE LA PARTIE EN COURS
 // ══════════════════════════════════════════════════════
+// ─────────────────────────────────────────────
+// PERSISTANCE DE LA PARTIE EN COURS
+// Sauvegarde l'état du jeu en localStorage
+// pour pouvoir reprendre si l'app est fermée
+// ─────────────────────────────────────────────
 function saveGameState(){
   if(!gameActive||!gs||!gs.players&&!gs.teams)return;
   try{
@@ -2310,6 +2447,7 @@ function restoreGameState(){
 })();
 
 // Restaurer la partie en cours si l'app a été fermée pendant une partie
+// Restaure la partie en cours si l'app a été fermée pendant une partie
 (function initRestoreGame(){
   if(restoreGameState()){
     // Partie sauvegardée trouvée → montrer le bouton reprendre
