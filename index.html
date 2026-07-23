@@ -1682,17 +1682,17 @@ function startGame(){
       for(let p=0;p<ppt;p++){const v=document.getElementById(`pn${t}_${p}`)?.value.trim();members.push(v||`Joueur ${t*ppt+p+1}`);}
       const tNameVal=document.getElementById(`tn${t}`)?.value.trim();
       const tName=tNameVal||TNAMES[t];
-      teams.push({name:tName,color:TCOLS[t],members,score:cfg.mode,legs:0,finishRank:null,memberIdx:0,dartsThisGame:0,checkoutDarts:0});
+      teams.push({name:tName,color:TCOLS[t],members,score:cfg.mode==='cricket'?0:parseInt(cfg.mode)||501,legs:0,finishRank:null,memberIdx:0,dartsThisGame:0,checkoutDarts:0});
     }
     // Mémoriser les noms utilisés
     teams.forEach(t=>{addKnownTeam(t.name);t.members.forEach(m=>addKnownPlayer(m));});
-    gs={mode:cfg.mode,fin:cfg.fin,isTeam:true,ppt,teams,curTeam:0,throws:[],mult:1,finishOrder:[]};
+    gs={mode:cfg.mode==='cricket'?'cricket':parseInt(cfg.mode)||501,fin:cfg.fin,isTeam:true,ppt,teams,curTeam:0,throws:[],mult:1,finishOrder:[]};
   } else {
     const names=[];
     for(let i=0;i<cfg.players;i++){const v=document.getElementById('pn'+i)?.value.trim();names.push(v||(cfg.players===1?'Vous':'Joueur '+(i+1)));}
     names.forEach(n=>addKnownPlayer(n));
-    gs={mode:cfg.mode,fin:cfg.fin,isTeam:false,
-      players:names.map(n=>({name:n,score:cfg.mode,legs:0,finishRank:null,dartsThisGame:0,checkoutDarts:0})),
+    gs={mode:cfg.mode==='cricket'?'cricket':parseInt(cfg.mode)||501,fin:cfg.fin,isTeam:false,
+      players:names.map(n=>({name:n,score:cfg.mode==='cricket'?0:parseInt(cfg.mode)||501,legs:0,finishRank:null,dartsThisGame:0,checkoutDarts:0})),
       cur:0,throws:[],mult:1,finishOrder:[]};
   }
   gameActive=true;
