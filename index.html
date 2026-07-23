@@ -1337,8 +1337,12 @@ function addThrowCricket(val){
 function cleanupCricket(){
   const np=document.getElementById('cricket-numpad');
   if(np) np.remove();
-  document.querySelector('.throw-log').style.display='';
-  document.querySelector('.numpad').style.display='';
+  const tl=document.querySelector('.throw-log');
+  if(tl)tl.style.display='';
+  const nb=document.querySelector('.numpad');
+  if(nb)nb.style.display='';
+  const cb=document.getElementById('checkoutBox');
+  if(cb)cb.style.display='';
 }
 
 // Bouton "Terminer" pendant la partie
@@ -1509,9 +1513,14 @@ buildNames();
 // Adapte l'interface selon le mode choisi
 // En Cricket : masque la section Fin de manche
 function updateSetupForMode(){
-  const isCricket=cfg.mode==='cricket';
-  const finSection=document.getElementById('finModes');
-  if(finSection)finSection.closest('.setup-section').style.display=isCricket?'none':'';
+  const isCricket = cfg.mode==='cricket';
+  // Masquer Fin de manche en Cricket (pas applicable)
+  const finSection = document.getElementById('finModes');
+  if(finSection && finSection.closest('.setup-section')){
+    finSection.closest('.setup-section').style.display = isCricket ? 'none' : '';
+  }
+  // En Cricket, remettre fin à 'simple' pour éviter les bugs
+  if(isCricket) cfg.fin='simple';
 });
 }
 
@@ -1739,7 +1748,8 @@ function startGame(){
     }
     // Mémoriser les noms utilisés
     teams.forEach(t=>{addKnownTeam(t.name);t.members.forEach(m=>addKnownPlayer(m));});
-    gs={mode:cfg.mode,fin:cfg.fin,isTeam:true,ppt,teams,curTeam:0,throws:[],mult:1,finishOrder:[]};
+      const modeVal=cfg.mode==='cricket'?'cricket':parseInt(cfg.mode)||501;
+  gs={mode:modeVal,fin:cfg.fin,isTeam:true,ppt,teams,curTeam:0,throws:[],mult:1,finishOrder:[]};
   } else {
     const names=[];
     for(let i=0;i<cfg.players;i++){const v=document.getElementById('pn'+i)?.value.trim();names.push(v||(cfg.players===1?'Vous':'Joueur '+(i+1)));}
@@ -1785,6 +1795,7 @@ function renderGame(){
   const baseScore=gs.isTeam?gs.teams[gs.curTeam].score:gs.players[gs.cur].score;
   const throwsTotal=gs.throws.reduce((s,t)=>s+t.pts,0);
   const sc=baseScore-throwsTotal;
+  if(gs.cricket){document.getElementById('checkoutBox').style.display='none';return;}
   const hints=getCheckout(sc,gs.fin);
   const cb=document.getElementById('checkoutBox');
   if(hints.length&&sc<=170){
