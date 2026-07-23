@@ -10,7 +10,113 @@
 <meta name="apple-touch-fullscreen" content="yes">
 <link rel="manifest" href="manifest.json">
 <!-- Firebase SDK (compat) -->
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js">
+// ── MODE CRICKET ──
+var CRICKET_ZONES=[20,19,18,17,16,15,25];
+
+function updateGameMode(){
+  var isCricket=cfg.mode==='cricket';
+  var fs=document.getElementById('finModes');
+  if(fs&&fs.closest('.setup-section'))fs.closest('.setup-section').style.display=isCricket?'none':'';
+  if(isCricket)cfg.fin='simple';
+}
+
+function initCricketState(){
+  var CZ=CRICKET_ZONES;
+  function ic(){var o={};CZ.forEach(function(z){o[z]=0;});return o;}
+  if(gs.isTeam)gs.teams.forEach(function(t){t.cricket=ic();});
+  else gs.players.forEach(function(p){p.cricket=ic();});
+  gs.isCricket=true;
+}
+
+function renderCricket(){
+  var players=gs.isTeam?gs.teams:gs.players;
+  var cur=gs.isTeam?gs.curTeam:gs.cur;
+  var cols=players.length;
+  var gc='60px repeat('+cols+',1fr)';
+  var html='<div class="cricket-board">';
+  html+='<div style="display:grid;grid-template-columns:'+gc+';gap:8px;padding:4px 12px"><div></div>';
+  players.forEach(function(p,i){
+    html+='<div class="cricket-player'+(i===cur?' active-col':'')+'">'+p.name+'</div>';
+  });
+  html+='</div>';
+  CRICKET_ZONES.forEach(function(zone){
+    html+='<div class="cricket-row" style="display:grid;grid-template-columns:'+gc+';gap:8px">';
+    html+='<div class="cricket-zone">'+(zone===25?'Bull':zone)+'</div>';
+    players.forEach(function(p){
+      var hits=p.cricket[zone]||0;
+      if(hits>=3){html+='<div class="cricket-done">✓</div>';}
+      else{
+        html+='<div class="cricket-marks">';
+        for(var m=1;m<=3;m++)html+='<div class="cricket-mark'+(hits>=m?' hit':'')+'"></div>';
+        html+='</div>';
+      }
+    });
+    html+='</div>';
+  });
+  html+='<div style="padding:8px 12px;font-family:var(--mono);font-size:12px;color:var(--muted);text-align:center">';
+  html+=gs.throws.length>0?gs.throws.map(function(t){return t.label;}).join(' · '):'Tour de <span style="color:var(--accent)">'+players[cur].name+'</span>';
+  html+='</div></div>';
+  document.getElementById('scoreboard').innerHTML=html;
+  document.getElementById('checkoutBox').style.display='none';
+  var tl=document.querySelector('.throw-log');if(tl)tl.style.display='none';
+  var nb=document.querySelector('.numpad');if(nb)nb.style.display='none';
+  buildCricketNumpad();
+}
+
+function buildCricketNumpad(){
+  var np=document.getElementById('cricket-numpad');
+  if(!np){np=document.createElement('div');np.id='cricket-numpad';np.className='cricket-numpad';document.getElementById('game-page').appendChild(np);}
+  np.style.display='grid';
+  var m=gs.mult||1;
+  np.innerHTML=
+    '<button class="cnb'+(m===1?' mult-active':'')+'" onclick="setCricketMult(1)">S</button>'+
+    '<button class="cnb'+(m===2?' mult-active':'')+'" onclick="setCricketMult(2)">D</button>'+
+    '<button class="cnb'+(m===3?' mult-active':'')+'" onclick="setCricketMult(3)">T</button>'+
+    '<button class="cnb" style="color:var(--muted);font-size:13px" onclick="addThrowCricket(0)">Raté</button>'+
+    [20,19,18,17,16,15].map(function(v){return '<button class="cnb" onclick="addThrowCricket('+v+')">'+v+'</button>';}).join('')+
+    '<button class="cnb bull" onclick="addThrowCricket(25)">Bull</button>';
+}
+
+function setCricketMult(m){gs.mult=m;buildCricketNumpad();}
+
+function addThrowCricket(val){
+  var players=gs.isTeam?gs.teams:gs.players;
+  var cur=gs.isTeam?gs.curTeam:gs.cur;
+  var p=players[cur];
+  var mult=gs.mult||1;
+  var label='';
+  if(val===0){label='Raté';}
+  else if(val===25){label=(mult===2?'D':mult===3?'T':'')+'Bull';}
+  else{label=(mult===1?'S':mult===2?'D':'T')+val;}
+  gs.throws.push({label:label,pts:0});
+  recordThrowStat(p.name,label,0);
+  if(gs.isTeam)gs.teams[cur].dartsThisGame=(gs.teams[cur].dartsThisGame||0)+1;
+  else gs.players[cur].dartsThisGame=(gs.players[cur].dartsThisGame||0)+1;
+  if(val!==0&&CRICKET_ZONES.indexOf(val)>=0&&p.cricket[val]<3){
+    p.cricket[val]=Math.min(3,(p.cricket[val]||0)+mult);
+  }
+  gs.mult=1;
+  var won=CRICKET_ZONES.every(function(z){return p.cricket[z]>=3;});
+  if(won){
+    gs.finishOrder.push(cur);
+    recordGameStat(p.name,true,p.dartsThisGame||0);
+    renderCricket();
+    setTimeout(handleRoundEnd,120);
+    return;
+  }
+  renderCricket();
+  if(gs.throws.length>=3)setTimeout(function(){nextTurn();},300);
+}
+
+function cleanupCricket(){
+  var np=document.getElementById('cricket-numpad');if(np)np.remove();
+  var tl=document.querySelector('.throw-log');if(tl)tl.style.display='';
+  var nb=document.querySelector('.numpad');if(nb)nb.style.display='';
+  var cb=document.getElementById('checkoutBox');if(cb)cb.style.display='';
+}
+
+</script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <title>🎯 Fléchettes</title>
 <style>
@@ -478,6 +584,19 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 .hist-score{font-family:var(--mono);font-size:13px;color:var(--text)}
 .hist-score span{color:var(--muted);font-size:11px}
 .stat-section-label{padding:0 20px 8px;font-size:10px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px}
+.cricket-board{padding:8px 16px;display:flex;flex-direction:column;gap:6px}
+.cricket-row{display:grid;align-items:center;background:var(--surface);border-radius:10px;padding:8px 12px;gap:8px}
+.cricket-zone{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--accent);text-align:center}
+.cricket-marks{display:flex;gap:4px;align-items:center;justify-content:center}
+.cricket-mark{width:18px;height:18px;border-radius:50%;border:2px solid var(--border2);transition:all .2s}
+.cricket-mark.hit{border-color:var(--accent);background:var(--accent)}
+.cricket-done{color:var(--green);font-size:16px;text-align:center}
+.cricket-player{font-family:var(--mono);font-size:11px;font-weight:600;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cricket-player.active-col{color:var(--accent)}
+.cricket-numpad{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px 16px}
+.cricket-numpad .cnb{border-radius:12px;padding:14px 0;font-family:var(--mono);font-size:18px;font-weight:700;background:var(--surface);border:1px solid var(--border);color:var(--text);cursor:pointer;text-align:center}
+.cricket-numpad .cnb.bull{color:var(--accent)}
+.cricket-numpad .cnb.mult-active{background:var(--accent);color:#0a0a0c}
 </style>
 </head>
 <body>
@@ -514,9 +633,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
     <div class="setup-section">
       <div class="section-label">Mode de jeu</div>
       <div class="pill-group" id="gameModes">
-        <div class="pill active" data-val="501">501</div>
-        <div class="pill" data-val="301">301</div>
-        <div class="pill" data-val="201">201</div>
+        <div class="pill active" data-val="501" onclick="updateGameMode()">501</div>
+        <div class="pill" data-val="301" onclick="updateGameMode()">301</div>
+        <div class="pill" data-val="201" onclick="updateGameMode()">201</div>
+        <div class="pill" data-val="cricket" onclick="updateGameMode()">Cricket</div>
       </div>
     </div>
     <div class="setup-section">
@@ -553,7 +673,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
       <div class="pill-group" id="finModes">
         <div class="pill active" data-val="simple">Simple</div>
         <div class="pill" data-val="double">Double</div>
-        <div class="pill" data-val="master">Master</div>
       </div>
     </div>
     <div class="setup-section">
@@ -953,6 +1072,7 @@ function backToSetup(force=false){
     navTo('setup');
     return;
   }
+  if(gs&&gs.isCricket)cleanupCricket();
   gameActive=false;
   clearGameState();
   document.getElementById('game-page').style.display='none';
@@ -1224,6 +1344,7 @@ function startGame(){
   }
   gameActive=true;
   gs.turnHistory=[];
+  if(cfg.mode==='cricket')initCricketState();
   navTo('game');
   renderGame();
 }
@@ -1232,6 +1353,7 @@ function startGame(){
 // RENDU JEU
 // ══════════════════════════════════════════════════════
 function renderGame(){
+  if(gs&&gs.isCricket){renderCricket();return;}
   document.getElementById('modeBadge').textContent=gs.mode+' · '+gs.fin+(gs.isTeam?' · Équipes':'');
   gs.isTeam?renderSBTeams():renderSBSolo();
 
@@ -1307,7 +1429,6 @@ function buildNumpad(){
 // ══════════════════════════════════════════════════════
 function isValidFinish(lastT){
   if(gs.fin==='double')return lastT.label==='Bull 50'||lastT.label.startsWith('D');
-  if(gs.fin==='master')return lastT.label==='Bull 50'||lastT.label.startsWith('D')||lastT.label.startsWith('T');
   return true;
 }
 function curScore(){return gs.isTeam?gs.teams[gs.curTeam].score:gs.players[gs.cur].score;}
@@ -1331,6 +1452,7 @@ function recordFinish(idx){
 function setMult(m){gs.mult=m;[1,2,3].forEach(x=>document.getElementById('m'+x).classList.toggle('active',x===m));}
 
 function addThrow(n){
+  if(gs&&gs.isCricket){addThrowCricket(n);return;}
   if(gs.throws.length>=3)return;
   let pts=0,label='';
   if(n==='B25'){pts=25;label='Bull 25';}
