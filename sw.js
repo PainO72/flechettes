@@ -1,4 +1,4 @@
-const CACHE = 'flechettes-v6';
+const CACHE = 'flechettes-v3';
 const FILES = ['./index.html', './manifest.json'];
 
 self.addEventListener('install', e => {
