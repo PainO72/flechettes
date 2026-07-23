@@ -631,10 +631,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
     <div class="setup-section">
       <div class="section-label">Mode de jeu</div>
       <div class="pill-group" id="gameModes">
-        <div class="pill active" data-val="501" onclick="updateGameMode()">501</div>
-        <div class="pill" data-val="301" onclick="updateGameMode()">301</div>
-        <div class="pill" data-val="201" onclick="updateGameMode()">201</div>
-        <div class="pill" data-val="cricket" onclick="updateGameMode()">Cricket</div>
+        <div class="pill active" data-val="501">501</div>
+        <div class="pill" data-val="301">301</div>
+        <div class="pill" data-val="201">201</div>
+        <div class="pill" data-val="cricket">Cricket</div>
       </div>
     </div>
     <div class="setup-section">
@@ -1450,6 +1450,8 @@ function makePills(gid,key){
       cfg[key]=isNaN(v)?v:parseInt(v);
       if(['players','partyType','numTeams'].includes(key))buildNames();
       if(key==='partyType')toggleMode();
+      if(key==='mode')updateGameMode();
+      if(key==='mode')updateGameMode();
     });
   });
 }
@@ -1672,7 +1674,7 @@ function buildNames(){
 // Initialise l'état du jeu selon la configuration
 // (mode solo/équipes, nombre de joueurs, mode de fin)
 // ─────────────────────────────────────────────
-function startGame(){
+function startGame(){try{
   const isTeam=cfg.partyType!=='solo';
   const ppt=cfg.partyType==='team2'?2:3;
   if(isTeam){
@@ -1707,6 +1709,7 @@ function startGame(){
   if(cfg.mode==='cricket')initCricketState();
   navTo('game');
   renderGame();
+  }catch(e){alert('startGame ERROR: '+e.message+' line:'+e.lineNumber);}
 }
 
 // ══════════════════════════════════════════════════════
