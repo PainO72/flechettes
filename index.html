@@ -266,23 +266,21 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 .player-card.active .pc-name{color:var(--accent)}
 .pc-score{font-family:var(--mono);font-size:22px;font-weight:500;color:var(--text);line-height:1}
 .pc-live{font-family:var(--mono);font-size:15px;font-weight:600;color:#3ecf7a;line-height:1;margin-top:3px;min-height:18px}
-/* ─── CRICKET ─── */
-.cricket-board{padding:8px 16px;display:flex;flex-direction:column;gap:6px;overflow-y:auto}
-.cricket-header{display:grid;font-family:var(--mono);font-size:11px;color:var(--muted);font-weight:600;text-align:center;padding:0 0 4px}
+.tc-live{font-family:var(--mono);font-size:13px;font-weight:600;color:#3ecf7a;line-height:1;margin-top:2px;min-height:16px}
+.cricket-board{padding:8px 16px;display:flex;flex-direction:column;gap:6px}
 .cricket-row{display:grid;align-items:center;background:var(--surface);border-radius:10px;padding:8px 12px;gap:8px}
 .cricket-zone{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--accent);text-align:center}
 .cricket-marks{display:flex;gap:4px;align-items:center;justify-content:center}
-.cricket-mark{width:18px;height:18px;border-radius:50%;border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:10px;transition:all .2s}
-.cricket-mark.hit{border-color:var(--accent);background:var(--accent);color:#0a0a0c;font-weight:700}
-.cricket-mark.closed{border-color:var(--green);background:var(--green);color:#0a0a0c}
+.cricket-mark{width:18px;height:18px;border-radius:50%;border:2px solid var(--border2);transition:all .2s}
+.cricket-mark.hit{border-color:var(--accent);background:var(--accent)}
+.cricket-done{color:var(--green);font-size:16px;text-align:center}
 .cricket-player{font-family:var(--mono);font-size:11px;font-weight:600;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cricket-player.active-col{color:var(--accent)}
-.cricket-done{color:var(--green);font-size:14px;text-align:center}
 .cricket-numpad{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px 16px}
-.cricket-numpad .nb{border-radius:12px;padding:14px 0;font-family:var(--mono);font-size:18px;font-weight:700;background:var(--surface);border:1px solid var(--border);color:var(--text);cursor:pointer;text-align:center;transition:background .1s}
-.cricket-numpad .nb.bull{color:var(--accent)}
-.cricket-numpad .nb.miss{color:var(--muted);font-size:13px}
-.tc-live{font-family:var(--mono);font-size:13px;font-weight:600;color:#3ecf7a;line-height:1;margin-top:2px;min-height:16px}
+.cricket-numpad .cnb{border-radius:12px;padding:14px 0;font-family:var(--mono);font-size:18px;font-weight:700;background:var(--surface);border:1px solid var(--border);color:var(--text);cursor:pointer;text-align:center;transition:background .1s}
+.cricket-numpad .cnb.bull{color:var(--accent)}
+.cricket-numpad .cnb.miss{color:var(--muted);font-size:13px}
+.cricket-numpad .cnb.mult-active{background:var(--accent);color:#0a0a0c}
 .pc-legs{font-size:9px;color:var(--muted);margin-top:3px;font-family:var(--mono)}
 
 /* Checkout */
@@ -462,8 +460,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 .clear-btn{font-size:11px;color:var(--muted);background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:6px 12px;cursor:pointer;font-family:var(--mono)}
 .stat-player-select{padding:0 20px 16px;display:flex;gap:7px;overflow-x:auto;scrollbar-width:none}
 .stat-player-select::-webkit-scrollbar{display:none}
-.sp-pill{padding:7px 16px;border:2px solid transparent;border-radius:20px;background:var(--surface);color:var(--muted);font-family:var(--mono);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:background .15s,color .15s,border-color .15s;outline:1px solid var(--border2);outline-offset:-1px}
-.sp-pill.active{background:var(--accent);border-color:var(--accent);color:#0a0a0c;outline:none}
+.sp-pill{padding:7px 16px;border:1px solid var(--border2);border-radius:20px;background:var(--surface);color:var(--muted);font-family:var(--mono);font-size:12px;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s}
+.sp-pill.active{background:var(--accent);border-color:var(--accent);color:#0a0a0c;font-weight:600}
 .stat-empty{text-align:center;padding:70px 20px;color:var(--muted);font-size:14px}
 .stat-empty .se-icon{font-size:44px;margin-bottom:14px;opacity:.5}
 
@@ -532,10 +530,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
     <div class="setup-section">
       <div class="section-label">Mode de jeu</div>
       <div class="pill-group" id="gameModes">
-        <div class="pill active" data-val="501" onclick="updateSetupForMode()">501</div>
-        <div class="pill" data-val="301" onclick="updateSetupForMode()">301</div>
-        <div class="pill" data-val="201" onclick="updateSetupForMode()">201</div>
-        <div class="pill" data-val="cricket" onclick="updateSetupForMode()">Cricket</div>
+        <div class="pill active" data-val="501" onclick="updateGameMode()">501</div>
+        <div class="pill" data-val="301" onclick="updateGameMode()">301</div>
+        <div class="pill" data-val="201" onclick="updateGameMode()">201</div>
+        <div class="pill" data-val="cricket" onclick="updateGameMode()">Cricket</div>
       </div>
     </div>
     <div class="setup-section">
@@ -568,7 +566,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
       </div>
     </div>
     <div class="setup-section">
-      <div class="section-label" id="finLabel">Fin de manche</div>
+      <div class="section-label">Fin de manche</div>
       <div class="pill-group" id="finModes">
         <div class="pill active" data-val="simple">Simple</div>
         <div class="pill" data-val="double">Double</div>
@@ -587,8 +585,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
   <div class="top-bar">
     <button class="back-btn" onclick="backToSetup()">←</button>
     <div class="game-badge" id="modeBadge"></div>
-    <div style="display:flex;gap:6px;align-items:center">
-      <button onclick="confirmEndGame()" style="background:rgba(232,84,71,.12);border:1px solid rgba(232,84,71,.35);border-radius:20px;padding:5px 12px;font-family:var(--mono);font-size:11px;font-weight:600;color:var(--red);cursor:pointer;line-height:1">Terminer</button>
+    <div style="display:flex;gap:6px">
       <button id="fullscreenBtn" onclick="toggleFullscreen()" style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 10px;font-size:16px;cursor:pointer;line-height:1" title="Plein écran">⛶</button>
       <button id="themeBtnGame" onclick="toggleTheme()" style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 10px;font-size:16px;cursor:pointer;line-height:1">☀️</button>
     </div>
@@ -637,7 +634,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 
 <!-- ══════════════ SYNC SCREEN ══════════════ -->
 <div id="sync-screen">
-  <button onclick="skipSync()" style="position:absolute;top:20px;left:20px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px 14px;color:var(--muted);font-size:16px;cursor:pointer">←</button>
   <div class="sync-icon">🔗</div>
   <div class="sync-title">Synchronisation</div>
   <div class="sync-sub" id="syncSubText">Choisissez un code unique pour votre session.<br>Entrez le même code sur chaque appareil<br>pour partager vos statistiques.</div>
@@ -645,7 +641,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
     <input class="sync-input" id="syncCodeInput" type="number" inputmode="numeric" placeholder="ex: 1234">
   </div>
   <button class="sync-btn" onclick="connectSync()">Connecter</button>
-  <span class="sync-skip" onclick="skipSync()">Se déconnecter / Sans synchronisation</span>
+  <span class="sync-skip" onclick="skipSync()">Continuer sans synchronisation</span>
   <div class="sync-status" id="syncStatus"></div>
 </div>
 <!-- ══════════════ WIN SCREEN ══════════════ -->
@@ -694,77 +690,39 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 </nav>
 
 <script>
-window.onerror=function(msg,src,line,col,err){alert("ERR L"+line+": "+msg);return false;};
-
-// ======================================================
+// ══════════════════════════════════════════════════════
 // CHECKOUT DB
-// ======================================================
-// ---------------------------------------------
-// BASE DE DONN  ES DES COMBINAISONS DE SORTIE
-// Contient les meilleures combinaisons pour clôturer
-// en mode Double/Master (scores 2    170)
-// ---------------------------------------------
-const CHECKOUTS={170:["T20 T20 B25"],167:["T20 T19 B25"],164:["T20 T18 B25"],161:["T20 T17 B25"],160:["T20 T20 D20"],158:["T20 T20 D19"],157:["T20 T19 D20"],156:["T20 T20 D18"],155:["T20 T19 D19"],154:["T20 T18 D20"],153:["T20 T19 D18"],152:["T20 T20 D16"],151:["T20 T19 D17"],150:["T20 T18 D18"],149:["T20 T19 D16"],148:["T20 T20 D14"],147:["T20 T17 D18"],146:["T20 T18 D16"],145:["T20 T15 D20"],144:["T20 T20 D12"],143:["T20 T17 D16"],142:["T20 T14 D20"],141:["T20 T15 D18"],140:["T20 T20 D10"],139:["T20 T19 D11"],138:["T20 T18 D12"],137:["T20 T19 D10"],136:["T20 T20 D8"],135:["T20 T17 D12"],134:["T20 T14 D16"],133:["T20 T19 D8"],132:["T20 T16 D12"],131:["T20 T13 D16"],130:["T20 T18 D8"],129:["T20 T19 D6"],128:["T20 T16 D10"],127:["T20 T17 D8"],126:["T20 T16 D9"],125:["T20 T15 D10"],124:["T20 T16 D8"],123:["T20 T13 D12"],122:["T18 T18 D7"],121:["T20 T11 D14"],120:["T20 S20 D20"],119:["T19 T12 D13"],118:["T20 S18 D20"],117:["T20 S17 D20"],116:["T20 S16 D20"],115:["T20 S15 D20"],114:["T20 S14 D20"],113:["T20 S13 D20"],112:["T20 S12 D20"],111:["T20 S11 D20"],110:["T20 S10 D20"],109:["T20 S9 D20"],108:["T20 S8 D20"],107:["T20 S7 D20"],106:["T20 S6 D20"],105:["T20 S5 D20"],104:["T20 S4 D20"],103:["T20 S3 D20"],102:["T20 S2 D20"],101:["T20 S1 D20"],100:["T20 D20"],99:["T19 S10 D16"],98:["T20 D19"],97:["T19 D20"],96:["T20 D18"],95:["T19 D19"],94:["T18 D20"],93:["T19 D18"],92:["T20 D16"],91:["T17 D20"],90:["T18 D18","T20 D15"],89:["T19 D16"],88:["T20 D14","T16 D20"],87:["T17 D18","T19 D15"],86:["T18 D16"],85:["T15 D20","T19 D14"],84:["T20 D12","T16 D18"],83:["T17 D16"],82:["T14 D20","T18 D14"],81:["T19 D12"],80:["T20 D10","T16 D16"],79:["T13 D20"],78:["T18 D12"],77:["T19 D10"],76:["T20 D8"],75:["T17 D12"],74:["T14 D16"],73:["T19 D8"],72:["T16 D12"],71:["T13 D16"],70:["T18 D8","T10 D20"],69:["T19 D6"],68:["T20 D4"],67:["T17 D8"],66:["T10 D18"],65:["T19 D4"],64:["T16 D8"],63:["T13 D12"],62:["T10 D16"],61:["T15 D8"],60:["S20 D20"],59:["S19 D20"],58:["S18 D20"],57:["S17 D20"],56:["S16 D20"],55:["S15 D20"],54:["S14 D20"],53:["S13 D20"],52:["S12 D20"],51:["S11 D20"],50:["B25","S10 D20"],49:["S9 D20"],48:["S16 D16"],47:["S15 D16"],46:["S6 D20"],45:["S13 D16"],44:["S12 D16"],43:["S11 D16"],42:["S10 D16"],41:["S9 D16"],40:["D20"],39:["S7 D16"],38:["D19"],37:["S5 D16"],36:["D18"],35:["S3 D16"],34:["D17"],33:["S1 D16"],32:["D16"],31:["S15 D8"],30:["D15"],29:["S13 D8"],28:["D14"],27:["S11 D8"],26:["D13"],25:["S9 D8"],24:["D12"],23:["S7 D8"],22:["D11"],21:["S5 D8"],20:["D10"],18:["D9"],16:["D8"],14:["D7"],12:["D6"],10:["D5"],8:["D4"],6:["D3"],4:["D2"],2:["D1"]};
+// ══════════════════════════════════════════════════════
+const CHECKOUTS={170:["T20 T20 Bull"],167:["T20 T19 Bull"],164:["T20 T18 Bull"],161:["T20 T17 Bull"],160:["T20 T20 D20"],158:["T20 T20 D19"],157:["T20 T19 D20"],156:["T20 T20 D18"],155:["T20 T19 D19"],154:["T20 T18 D20"],153:["T20 T19 D18"],152:["T20 T20 D16"],151:["T20 T19 D17"],150:["T20 T18 D18"],149:["T20 T19 D16"],148:["T20 T20 D14"],147:["T20 T17 D18"],146:["T20 T18 D16"],145:["T20 T15 D20"],144:["T20 T20 D12"],143:["T20 T17 D16"],142:["T20 T14 D20"],141:["T20 T15 D18"],140:["T20 T20 D10"],139:["T20 T19 D11"],138:["T20 T18 D12"],137:["T20 T19 D10"],136:["T20 T20 D8"],135:["T20 T17 D12"],134:["T20 T14 D16"],133:["T20 T19 D8"],132:["T20 T16 D12"],131:["T20 T13 D16"],130:["T20 T18 D8"],129:["T20 T19 D6"],128:["T20 T16 D10"],127:["T20 T17 D8"],126:["T20 T16 D9"],125:["T20 T15 D10"],124:["T20 T16 D8"],123:["T20 T13 D12"],122:["T18 T18 D7"],121:["T20 T11 D14"],120:["T20 S20 D20"],119:["T19 T12 D13"],118:["T20 S18 D20"],117:["T20 S17 D20"],116:["T20 S16 D20"],115:["T20 S15 D20"],114:["T20 S14 D20"],113:["T20 S13 D20"],112:["T20 S12 D20"],111:["T20 S11 D20"],110:["T20 S10 D20"],109:["T20 S9 D20"],108:["T20 S8 D20"],107:["T20 S7 D20"],106:["T20 S6 D20"],105:["T20 S5 D20"],104:["T20 S4 D20"],103:["T20 S3 D20"],102:["T20 S2 D20"],101:["T20 S1 D20"],100:["T20 D20"],99:["T19 S10 D16"],98:["T20 D19"],97:["T19 D20"],96:["T20 D18"],95:["T19 D19"],94:["T18 D20"],93:["T19 D18"],92:["T20 D16"],91:["T17 D20"],90:["T18 D18","T20 D15"],89:["T19 D16"],88:["T20 D14","T16 D20"],87:["T17 D18","T19 D15"],86:["T18 D16"],85:["T15 D20","T19 D14"],84:["T20 D12","T16 D18"],83:["T17 D16"],82:["T14 D20","T18 D14"],81:["T19 D12"],80:["T20 D10","T16 D16"],79:["T13 D20"],78:["T18 D12"],77:["T19 D10"],76:["T20 D8"],75:["T17 D12"],74:["T14 D16"],73:["T19 D8"],72:["T16 D12"],71:["T13 D16"],70:["T18 D8","T10 D20"],69:["T19 D6"],68:["T20 D4"],67:["T17 D8"],66:["T10 D18"],65:["T19 D4"],64:["T16 D8"],63:["T13 D12"],62:["T10 D16"],61:["T15 D8"],60:["S20 D20"],59:["S19 D20"],58:["S18 D20"],57:["S17 D20"],56:["S16 D20"],55:["S15 D20"],54:["S14 D20"],53:["S13 D20"],52:["S12 D20"],51:["S11 D20"],50:["Bull","S10 D20"],49:["S9 D20"],48:["S16 D16"],47:["S15 D16"],46:["S6 D20"],45:["S13 D16"],44:["S12 D16"],43:["S11 D16"],42:["S10 D16"],41:["S9 D16"],40:["D20"],39:["S7 D16"],38:["D19"],37:["S5 D16"],36:["D18"],35:["S3 D16"],34:["D17"],33:["S1 D16"],32:["D16"],31:["S15 D8"],30:["D15"],29:["S13 D8"],28:["D14"],27:["S11 D8"],26:["D13"],25:["S9 D8"],24:["D12"],23:["S7 D8"],22:["D11"],21:["S5 D8"],20:["D10"],18:["D9"],16:["D8"],14:["D7"],12:["D6"],10:["D5"],8:["D4"],6:["D3"],4:["D2"],2:["D1"]};
 
-// ---------------------------------------------
-// CONSEILS DE SORTIE
-// Calcule les combinaisons sugg  r  es pour clôturer
-// selon le score restant et le mode de fin
-// - Mode simple : trouve la combo la plus rapide et la plus simple
-// - Mode double/master : utilise la base CHECKOUTS
-// ---------------------------------------------
 function getCheckout(score,fin){
   if(score>170||score<1)return[];
   if(fin==='simple'){
-    const ZONES=[];
-    for(let i=20;i>=1;i--){
-      ZONES.push([i*3,'T'+i]);
-      ZONES.push([i*2,'D'+i]);
-      ZONES.push([i,'S'+i]);
-    }
-    ZONES.push([50,'Bull 50'],[25,'B25']);
-    const find1=(zones,sc)=>{ for(const [v,l] of zones){ if(v===sc)return l; } return null; };
-    const find2=(zones,sc)=>{ for(const [v1,l1] of zones){ if(v1>=sc)continue; const r=find1(zones,sc-v1); if(r)return l1+' '+r; } return null; };
-    const find3=(zones,sc)=>{ for(const [v1,l1] of zones){ if(v1>=sc)continue; const r=find2(zones,sc-v1); if(r)return l1+' '+r; } return null; };
-    const hints=[];
-    const h1=find1(ZONES,score)||find2(ZONES,score)||find3(ZONES,score);
-    if(h1)hints.push(h1);
-    const SZ=[];
-    for(let i=20;i>=1;i--)SZ.push([i,'S'+i]);
-    SZ.push([25,'B25'],[50,'Bull 50']);
-    const h2=find1(SZ,score)||find2(SZ,score)||find3(SZ,score);
-    if(h2&&h2!==h1)hints.push(h2);
-    return hints.slice(0,2);
+    if(score===1)return['S1'];
+    if(score<=20)return['S'+score];
+    if(score===25)return['Bull 25'];
+    if(score===50)return['Bull 50'];
   }
-  if(score<2)return[];
-  return CHECKOUTS[score]?CHECKOUTS[score].slice(0,2):[];
+  if(score<2)return[]; // double/master : min 2 pour D1
+  return CHECKOUTS[score]?CHECKOUTS[score].slice(0,3):[];
 }
 
-// ======================================================
+// ══════════════════════════════════════════════════════
 // CONSTANTES
-// ======================================================
-// ---------------------------------------------
-// CONSTANTES   QUIPES
-// Couleurs et noms par défaut des équipes
-// ---------------------------------------------
+// ══════════════════════════════════════════════════════
 const TCOLS=['#e8c547','#4799e8','#47c47e','#e85447'];
-const TNAMES=['  quipe A','  quipe B','  quipe C','  quipe D'];
+const TNAMES=['Équipe A','Équipe B','Équipe C','Équipe D'];
 
-// ======================================================
+// ══════════════════════════════════════════════════════
 // FIREBASE CONFIG
-// ======================================================
-// ---------------------------------------------
-// CONFIGURATION FIREBASE
-// Remplacez ces valeurs par celles de votre projet Firebase
-// (console.firebase.google.com -> Paramètres -> Vos applications)
-// ---------------------------------------------
+// ══════════════════════════════════════════════════════
 const FIREBASE_CFG = {
   apiKey: "AIzaSyDjBwqUnR7B3u1OfCWykdhA7wRGTq6J6Tc",
   authDomain: "flechettes-d6ac1.firebaseapp.com",
   projectId: "flechettes-d6ac1"
 };
-//        Ces valeurs DOIVENT   tre remplac  es par les v  tres (voir INSTALLATION.md)
-// Tant qu'elles ne sont pas configur  es, l'app fonctionne en local uniquement.
+// ⚠️ Ces valeurs DOIVENT être remplacées par les vôtres (voir INSTALLATION.md)
+// Tant qu'elles ne sont pas configurées, l'app fonctionne en local uniquement.
 
 let db = null;
 let syncGroupId = null;
@@ -786,29 +744,24 @@ function openSyncScreen(){
   document.getElementById('syncStatus').className = 'sync-status';
   const sub = document.getElementById('syncSubText');
   if(savedCode){
-    sub.innerHTML = 'Connect      la session <strong style="color:var(--accent)">'+savedCode+'</strong>.<br>Modifiez le code pour changer de session.';
+    sub.innerHTML = 'Connecté à la session <strong style="color:var(--accent)">'+savedCode+'</strong>.<br>Modifiez le code pour changer de session.';
   } else {
     sub.innerHTML = 'Choisissez un code unique pour votre session.<br>Entrez le même code sur chaque appareil<br>pour partager vos statistiques.';
   }
 }
 
 function skipSync(){
-  // Effacer le code de session et d  connecter
-  localStorage.removeItem('fl_sync_code');
-  syncEnabled = false;
-  syncGroupId = null;
   document.getElementById('sync-screen').classList.remove('show');
-  updateSyncBadge();
 }
 
 async function connectSync(){
   const code = String(document.getElementById('syncCodeInput').value).trim();
   if(code.length < 1){ alert('Code de session requis'); return; }
   const status = document.getElementById('syncStatus');
-  status.textContent = 'Connexion   '; status.className = 'sync-status';
+  status.textContent = 'Connexion…'; status.className = 'sync-status';
 
   if(!initFirebase()){
-    status.textContent = '       Firebase non configur       voir INSTALLATION.md';
+    status.textContent = '⚠️ Firebase non configuré — voir INSTALLATION.md';
     status.className = 'sync-status err'; return;
   }
 
@@ -818,9 +771,8 @@ async function connectSync(){
     syncGroupId = 'g_' + code;
     syncEnabled = true;
     localStorage.setItem('fl_sync_code', code);
-    // Fusionner local + cloud (par joueur)
     await pushLocalStatsToCloud();
-    status.textContent = '    Connect   ! Session ' + code;
+    status.textContent = '✓ Connecté ! Session ' + code;
     status.className = 'sync-status ok';
     updateSyncBadge();
     setTimeout(()=>{ document.getElementById('sync-screen').classList.remove('show'); renderStats(); }, 1200);
@@ -830,145 +782,81 @@ async function connectSync(){
   }
 }
 
-// ---------------------------------------------
-// SYNCHRONISATION ENTRE APPAREILS
-// Strat  gie : fusion par joueur avec timestamp individuel
-// Chaque joueur a son propre _ts (horodatage)
-// La version la plus r  cente par joueur gagne toujours
-// ---------------------------------------------
-// ======================================================
-// SYNC     Strat  gie : un seul document "stats" avec timestamp
-// La derni  re écriture (timestamp le plus r  cent) gagne toujours
-// Suppression = écriture avec donn  es vides + timestamp r  cent
-// ======================================================
-
-// ======================================================
-// SYNC     Fusion par joueur avec timestamp individuel
-// Structure Firebase :
-// { players: { "Pierre": { ...stats, _ts: 1234567 }, "Marie": { ...stats, _ts: 1234568 } } }
-// Chaque joueur a son propre timestamp.
-// Fusion : pour chaque joueur, on prend la version avec le _ts le plus r  cent.
-// -> Impossible de perdre les donn  es d'un joueur en jouant sur deux appareils en parall  le.
-// ======================================================
-
-function getLocalTimestamps(){
-  try{ return JSON.parse(localStorage.getItem('fl_stats_ts_map')||'{}'); }
-  catch(e){ return {}; }
-}
-function saveLocalTimestamps(map){
-  try{ localStorage.setItem('fl_stats_ts_map', JSON.stringify(map)); }
-  catch(e){}
-}
-
-// Fusion de deux objets stats : pour chaque joueur, prend la version la plus r  cente
-function mergeByPlayer(local, cloud){
-  const result = JSON.parse(JSON.stringify(local));
-  for(const name of Object.keys(cloud)){
-    const cloudPlayer = cloud[name];
-    const cloudTs = cloudPlayer._ts || 0;
-    const localTs = (result[name] && result[name]._ts) || 0;
-    if(cloudTs > localTs){
-      result[name] = cloudPlayer; // le cloud est plus r  cent pour ce joueur
-    }
-  }
-  return result;
-}
-
-// Filtre les joueurs supprim  s (_deleted:true) pour l'affichage
-function filterDeleted(stats){
-  const result = {};
-  for(const name of Object.keys(stats)){
-    if(!stats[name]._deleted) result[name] = stats[name];
-  }
-  return result;
-}
-
 async function pushLocalStatsToCloud(){
   if(!syncEnabled || !db) return;
   const local = loadStatsLocal();
   if(!Object.keys(local).length) return;
   try {
     const ref = db.collection('fl_groups').doc(syncGroupId);
-    // Lire le cloud d'abord pour fusionner
     const snap = await ref.get();
-    const cloud = snap.exists ? (snap.data().players || {}) : {};
-    const merged = mergeByPlayer(local, cloud);
-    // Sauvegarder la fusion en local et en cloud
+    const cloud = snap.exists ? (snap.data().stats || {}) : {};
+    // Fusionner : additionner les valeurs numériques, concaténer les tableaux
+    const merged = mergeStats(cloud, local);
+    await ref.set({ stats: merged });
     saveStatsLocal(merged);
-    await ref.set({ players: merged }, { merge: false });
   } catch(e){ console.warn('pushLocalStatsToCloud:', e); }
 }
 
-async function pullFromCloud(){
-  if(!syncEnabled || !db) return false;
-  try {
-    const ref = db.collection('fl_groups').doc(syncGroupId);
-    const snap = await ref.get();
-    if(!snap.exists) return false;
-    const cloud = snap.data().players || {};
-    if(!Object.keys(cloud).length) return false;
-    const local = loadStatsLocal();
-    const merged = mergeByPlayer(local, cloud);
-    saveStatsLocal(merged);
-    return true;
-  } catch(e){ console.warn('pullFromCloud:', e); return false; }
+function mergeStats(a, b){
+  // Pour chaque joueur dans b, fusionner avec a
+  const result = JSON.parse(JSON.stringify(a));
+  for(const name of Object.keys(b)){
+    if(!result[name]){
+      result[name] = b[name];
+    } else {
+      const r = result[name], src = b[name];
+      r.games = Math.max(r.games||0, src.games||0);
+      r.wins = Math.max(r.wins||0, src.wins||0);
+      r.totalDarts = Math.max(r.totalDarts||0, src.totalDarts||0);
+      r.totalPoints = Math.max(r.totalPoints||0, src.totalPoints||0);
+      r.turns = Math.max(r.turns||0, src.turns||0);
+      // Combiner closingDarts (prendre le plus long)
+      if((src.closingDarts||[]).length > (r.closingDarts||[]).length)
+        r.closingDarts = src.closingDarts;
+      // Combiner numberHits
+      if(!r.numberHits) r.numberHits = {};
+      for(const k of Object.keys(src.numberHits||{}))
+        r.numberHits[k] = Math.max(r.numberHits[k]||0, src.numberHits[k]||0);
+    }
+  }
+  return result;
 }
-
-async function getAggregatedStats(){
-  await pullFromCloud();
-  return loadStatsLocal();
-}
-
-async function pullAndMergeFromCloud(){
-  await pullFromCloud();
-}
-
-function aggregateStats(a, b){ return mergeByPlayer(a, b); }
 
 function updateSyncBadge(){
   const badge = document.getElementById('syncBadge');
   const label = document.getElementById('syncBadgeLabel');
-  // Le badge se base sur localStorage (imm  diat) et non sur syncEnabled (async)
-  const savedCode = localStorage.getItem('fl_sync_code');
-  if(savedCode){
+  if(syncEnabled){
     badge.classList.add('connected');
-    label.textContent = 'Session ' + savedCode;
+    label.textContent = 'Session ' + localStorage.getItem('fl_sync_code');
   } else {
     badge.classList.remove('connected');
-    label.textContent = 'Non synchronis  ';
+    label.textContent = 'Non synchronisé';
   }
 }
 
-// -- Fonctions de stockage (local + cloud) --
-// ---------------------------------------------
-// STOCKAGE LOCAL DES STATISTIQUES
-// ---------------------------------------------
+// ── Fonctions de stockage (local + cloud) ──
 function loadStatsLocal(){try{return JSON.parse(localStorage.getItem('fl_stats')||'{}')}catch(e){return{}}}
 function saveStatsLocal(s){try{localStorage.setItem('fl_stats',JSON.stringify(s))}catch(e){}}
 
 async function loadStats(){
-  await pullFromCloud();
+  if(syncEnabled && db){
+    try {
+      const snap = await db.collection('fl_groups').doc(syncGroupId).get();
+      if(snap.exists){
+        const s = snap.data().stats || {};
+        saveStatsLocal(s); // cache local
+        return s;
+      }
+    } catch(e){ console.warn('loadStats cloud fail, using local'); }
+  }
   return loadStatsLocal();
 }
 
 async function saveStats(s){
-  const ts = Date.now();
-  // Ajouter un timestamp individuel    chaque joueur modifi  
-  const stamped = JSON.parse(JSON.stringify(s));
-  for(const name of Object.keys(stamped)){
-    stamped[name]._ts = ts;
-  }
-  saveStatsLocal(stamped);
+  saveStatsLocal(s);
   if(syncEnabled && db){
     try {
-      const ref = db.collection('fl_groups').doc(syncGroupId);
-      // Lire, fusionner,   crire
-      const snap = await ref.get();
-      const cloud = snap.exists ? (snap.data().players || {}) : {};
-      const merged = mergeByPlayer(stamped, cloud);
-      // stamped est plus r  cent pour les joueurs modifi  s -> il gagne
-      await ref.set({ players: merged }, { merge: false });
-      saveStatsLocal(merged);
+      await db.collection('fl_groups').doc(syncGroupId).set({ stats: s });
     } catch(e){ console.warn('saveStats cloud fail:', e); }
   }
 }
@@ -981,100 +869,67 @@ function getPlayerStats(name){
   if(!s[name])s[name]={games:0,wins:0,totalDarts:0,closingDarts:[],numberHits:{},turns:0,totalPoints:0};
   return s;
 }
-function emptyPlayer(){return{games:0,wins:0,nc:0,totalDarts:0,closingDarts:[],numberHits:{},turns:0,totalPoints:0,realPoints:0,bestTurn:0,lastGameDarts:0,lastGameRealPts:0,bestGameAvg:0};}
+function emptyPlayer(){return{games:0,wins:0,totalDarts:0,closingDarts:[],numberHits:{},turns:0,totalPoints:0,realPoints:0,bestTurn:0};}
 
-// Enregistre les stats d'un lancer individuel
-// (zones touch  es, points r  els, nombre de fl  chettes)
 function recordThrowStat(playerName, label, pts){
   const s=loadStatsLocal();
-  // Si le joueur   tait marqu   supprim  , on repart de z  ro
-  if(!s[playerName] || s[playerName]._deleted) s[playerName]=emptyPlayer();
+  if(!s[playerName])s[playerName]=emptyPlayer();
   const p=s[playerName];
   p.totalDarts=(p.totalDarts||0)+1;
   p.totalPoints=(p.totalPoints||0)+pts;
-  p.realPoints=(p.realPoints||0)+pts; // points r  els touch  s (jamais annul  s)
-  // Cl   compl  te : D20, T20, S5, bull, dbull, miss
+  p.realPoints=(p.realPoints||0)+pts; // points réels touchés (jamais annulés)
+  // Clé complète : D20, T20, S5, bull, dbull, miss
   let hitKey=null;
   if(label==='Bull 25')hitKey='bull';
   else if(label==='Bull 50')hitKey='dbull';
-  else if(label==='Rat  ')hitKey='miss';
+  else if(label==='Raté')hitKey='miss';
   else{
     const m=label.match(/^([DTS]?)(\d+)/);
     if(m){
-      const pfx=m[1]||'S'; // pas de pr  fixe = Simple
+      const pfx=m[1]||'S'; // pas de préfixe = Simple
       hitKey=pfx+m[2];     // ex: D20, T20, S5
     }
   }
   if(hitKey!==null){if(!p.numberHits)p.numberHits={};p.numberHits[hitKey]=(p.numberHits[hitKey]||0)+1;}
   saveStats(s); // async fire-and-forget
 }
-// Enregistre les stats d'un tour complet (vol  e de 3 fl  chettes)
-// Met    jour la meilleure vol  e si applicable
 function recordTurnStat(playerName, turnTotal){
   const s=loadStatsLocal();
-  if(!s[playerName] || s[playerName]._deleted) s[playerName]=emptyPlayer();
+  if(!s[playerName])s[playerName]=emptyPlayer();
   const p=s[playerName];
   p.turns=(p.turns||0)+1;
-  // Meilleur tour (vol  e)
+  // Meilleur tour (volée)
   if(turnTotal>0){
     if(!p.bestTurn||turnTotal>p.bestTurn) p.bestTurn=turnTotal;
   }
   saveStats(s);
 }
-// Enregistre le r  sultat d'une partie pour un joueur
-// won=true -> Victoire, notClosed=true -> NC (non clôtur  ), sinon -> D  faite
-// Prot  g   contre les doubles enregistrements (gs.statsRecorded)
-function recordGameStat(playerName, won, dartsUsed, members=null, realPtsThisGame=0, notClosed=false, checkoutDartsUsed=0){
-  const recordKey = playerName;
-  if(gs && gs.statsRecorded && gs.statsRecorded.has(recordKey)){
-    return;
-  }
-  if(gs && gs.statsRecorded) gs.statsRecorded.add(recordKey);
-
+function recordGameStat(playerName, won, dartsUsed, members=null){
   const s=loadStatsLocal();
-  if(!s[playerName] || s[playerName]._deleted) s[playerName]=emptyPlayer();
+  if(!s[playerName])s[playerName]=emptyPlayer();
   const p=s[playerName];
-  // En solo, on n'enregistre pas les parties/victoires/d  faites
-  if(!gs || !gs.isSolo){
-    p.games=(p.games||0)+1;
-    if(won)p.wins=(p.wins||0)+1;
-    if(notClosed)p.nc=(p.nc||0)+1;
-  }
-  // closingDarts = fl  chettes en zone checkout (<=170), seulement si clôtur  
-  if(!notClosed && checkoutDartsUsed>0)p.closingDarts=[...(p.closingDarts||[]),checkoutDartsUsed];
+  p.games=(p.games||0)+1;
+  if(won)p.wins=(p.wins||0)+1;
+  if(dartsUsed>0)p.closingDarts=[...(p.closingDarts||[]),dartsUsed];
+  // Stocker les membres de l'équipe pour les retrouver dans la page stats
   if(members&&members.length) p.members=members;
-  // Stats de la derni  re partie
-  p.lastGameDarts=dartsUsed;
-  p.lastGameRealPts=realPtsThisGame;
-  // Meilleure moyenne par partie
-  if(dartsUsed>0){
-    const avg=realPtsThisGame/dartsUsed;
-    if(avg>(p.bestGameAvg||0)) p.bestGameAvg=Math.round(avg*10)/10;
-  }
   saveStats(s);
 }
-// Supprime les stats d'un joueur (marquage _deleted pour propagation cloud)
-async function clearStats(){
+function clearStats(){
   if(!selectedStatPlayer)return;
   if(confirm('Effacer les statistiques de '+selectedStatPlayer+' ?')){
     const s=loadStatsLocal();
-    // Marquer comme supprim   avec timestamp r  cent (propag   sur tous les appareils)
-    s[selectedStatPlayer] = { _deleted: true, _ts: Date.now() };
-    await saveStats(s);
+    delete s[selectedStatPlayer];
+    saveStats(s);
     selectedStatPlayer=null;
     renderStats();
   }
 }
 
-// ======================================================
+// ══════════════════════════════════════════════════════
 // NAVIGATION
-// ======================================================
+// ══════════════════════════════════════════════════════
 let currentPage='setup';
-// ---------------------------------------------
-// NAVIGATION ENTRE LES PAGES
-// G  re l'affichage des pages setup / game / stats
-// et met    jour la barre de navigation
-// ---------------------------------------------
 function navTo(page){
   // Cacher toutes les pages
   ['setup','stats'].forEach(id=>{
@@ -1093,7 +948,7 @@ function navTo(page){
   const navBtn=document.getElementById('nav-'+page);
   if(navBtn)navBtn.classList.add('active');
   currentPage=page;
-  if(page==='stats'){renderStats().then(()=>{}); updateResumeBar();}
+  if(page==='stats'){renderStats(); updateResumeBar();}
   if(page==='setup'){updateResumeBar();}
   window.scrollTo(0,0);
 }
@@ -1104,302 +959,17 @@ function updateResumeBar(){
   const barStats=document.getElementById('resume-bar-stats');
   if(barStats) barStats.style.display=gameActive?'flex':'none';
 }
-
-// Enregistre les stats de fin de partie pour tous les joueurs
-// winner = index du 1er ayant clôtur   (finishOrder[0]) ou -1
-// closedIdx = liste des indices ayant clôtur   (finishOrder)
-// Enregistre les stats de fin de partie pour TOUS les joueurs
-// Appel   depuis showFinalRanking et confirmEndGame
-function recordAllGameStats(){
-  if(!gs || (!gs.players && !gs.teams)) return;
-  const winnerId = gs.finishOrder.length>0 ? gs.finishOrder[0] : -1;
-  const closedSet = new Set(gs.finishOrder);
-  const localStats = loadStatsLocal();
-
-  function getRealPts(name){
-    const prev=(gs.realPtsBefore&&gs.realPtsBefore[name])||0;
-    const cur=(localStats[name]||{}).realPoints||0;
-    return Math.max(0,cur-prev);
-  }
-
-  if(gs.isTeam){
-    gs.teams.forEach((t,i)=>{
-      const isWinner = i===winnerId;
-      const closed   = closedSet.has(i);
-      const nc       = !closed;
-      // D = clôturé mais pas gagnant; NC = pas clôtur  
-      const realPts  = t.members.reduce((s,m)=>s+getRealPts(m),0);
-      recordGameStat(
-        t.name, isWinner, t.dartsThisGame||0, t.members,
-        realPts, nc, nc?0:(t.checkoutDarts||0)
-      );
-    });
-  } else {
-    gs.players.forEach((p,i)=>{
-      const isWinner = i===winnerId;
-      const closed   = closedSet.has(i);
-      const nc       = !closed;
-      recordGameStat(
-        p.name, isWinner, p.dartsThisGame||0, null,
-        getRealPts(p.name), nc, nc?0:(p.checkoutDarts||0)
-      );
-    });
-  }
-}
-
-
-// ======================================================
-// MODE CRICKET
-// Zones : 15, 16, 17, 18, 19, 20, Bull (25)
-// Fermer une zone = 3 touches (S=1, D=2, T=3)
-// Gagne le premier    fermer toutes les zones
-// ======================================================
-const CRICKET_ZONES=[20,19,18,17,16,15,25];
-
-// Rendu du tableau de Cricket
-function renderCricket(){
-  const sb=document.getElementById('scoreboard');
-  const players=gs.isTeam?gs.teams:gs.players;
-  const cur=gs.isTeam?gs.curTeam:gs.cur;
-
-  // Construire le tableau zones    joueurs
-  const cols=players.length;
-  const gridCols=`60px repeat(${cols},1fr)`;
-
-  let html=`<div class="cricket-board">`;
-
-  // Header : noms des joueurs
-  html+=`<div class="cricket-header" style="display:grid;grid-template-columns:${gridCols};gap:8px;padding:4px 12px">`;
-  html+=`<div></div>`;
-  players.forEach((p,i)=>{
-    const name=gs.isTeam?p.name:p.name;
-    const active=i===cur;
-    html+=`<div class="cricket-player${active?' active-col':''}">${name}</div>`;
-  });
-  html+=`</div>`;
-
-  // Lignes des zones
-  CRICKET_ZONES.forEach(zone=>{
-    const lbl=zone===25?'Bull':zone;
-    html+=`<div class="cricket-row" style="display:grid;grid-template-columns:${gridCols};gap:8px">`;
-    html+=`<div class="cricket-zone">${lbl}</div>`;
-    players.forEach((p,i)=>{
-      const hits=p.cricket[zone]||0;
-      const closed=hits>=3;
-      if(closed){
-        html+=`<div class="cricket-done">   </div>`;
-      } else {
-        html+=`<div class="cricket-marks">`;
-        for(let m=1;m<=3;m++){
-          html+=`<div class="cricket-mark${hits>=m?' hit':''}"></div>`;
-        }
-        html+=`</div>`;
-      }
-    });
-    html+=`</div>`;
-  });
-
-  // Lancers en cours
-  html+=`<div style="padding:8px 12px;font-family:var(--mono);font-size:12px;color:var(--muted);text-align:center">`;
-  if(gs.throws.length>0){
-    html+=gs.throws.map(t=>t.label).join('    ');
-  } else {
-    html+=`Tour de <span style="color:var(--accent)">${players[cur].name}</span>`;
-  }
-  html+=`</div>`;
-  html+=`</div>`;
-
-  sb.innerHTML=html;
-
-  // Clavier Cricket
-  buildCricketNumpad();
-
-  // Cacher checkout-box et throw-log
-  document.getElementById('checkoutBox').style.display='none';
-  document.querySelector('.throw-log').style.display='none';
-  document.querySelector('.numpad').style.display='none';
-}
-
-// Clavier Cricket : 15-20, Bull, Rat  
-function buildCricketNumpad(){
-  let numpad=document.getElementById('cricket-numpad');
-  if(!numpad){
-    numpad=document.createElement('div');
-    numpad.id='cricket-numpad';
-    numpad.className='cricket-numpad';
-    document.getElementById('game-page').appendChild(numpad);
-  }
-  numpad.style.display='grid';
-  const btns=[20,19,18,17,16,15,'Bull','Rat  '];
-  numpad.innerHTML=btns.map(v=>{
-    const cls=v==='Bull'?'nb bull':v==='Rat  '?'nb miss':'nb';
-    return `<button class="${cls}" onclick="addThrowCricket('${v}')">${v}</button>`;
-  }).join('');
-}
-
-// Logique d'un lancer en Cricket
-function addThrowCricket(val){
-  const players=gs.isTeam?gs.teams:gs.players;
-  const cur=gs.isTeam?gs.curTeam:gs.cur;
-  const p=players[cur];
-  const pName=gs.isTeam?p.name:p.name;
-
-  let zone=null, touches=0, label='';
-  if(val==='Rat  '){ label='Rat  '; touches=0; }
-  else if(val==='Bull'){ zone=25; touches=gs.mult; label=(gs.mult===2?'D':gs.mult===3?'T':'')+'Bull'; }
-  else {
-    zone=parseInt(val);
-    if(!CRICKET_ZONES.includes(zone)){ flash('Zone invalide en Cricket','err'); return; }
-    touches=gs.mult;
-    label=(gs.mult===1?'S':gs.mult===2?'D':'T')+zone;
-  }
-
-  // Enregistrer le lancer
-  gs.throws.push({label, pts:0});
-  recordThrowStat(pName, label, 0);
-  if(gs.isTeam) gs.teams[cur].dartsThisGame=(gs.teams[cur].dartsThisGame||0)+1;
-  else gs.players[cur].dartsThisGame=(gs.players[cur].dartsThisGame||0)+1;
-
-  // Appliquer les touches sur la zone
-  if(zone!==null && p.cricket[zone]<3){
-    p.cricket[zone]=Math.min(3, (p.cricket[zone]||0)+touches);
-  }
-
-  gs.mult=1; // reset multiplicateur
-
-  // V  rifier la victoire : toutes les zones    3
-  const won=CRICKET_ZONES.every(z=>p.cricket[z]>=3);
-  if(won){
-    gs.finishOrder.push(cur);
-    recordGameStat(pName, true, p.dartsThisGame||0);
-    renderCricket();
-    setTimeout(handleRoundEnd,120);
-    return;
-  }
-
-  renderCricket();
-  recordTurnStat(pName, 0);
-  if(gs.throws.length>=3) setTimeout(()=>{nextTurn();renderCricket();},300);
-}
-
-// Nettoyage en quittant Cricket
-function cleanupCricket(){
-  const np=document.getElementById('cricket-numpad');
-  if(np) np.remove();
-  const tl=document.querySelector('.throw-log');
-  if(tl)tl.style.display='';
-  const nb=document.querySelector('.numpad');
-  if(nb)nb.style.display='';
-  const cb=document.getElementById('checkoutBox');
-  if(cb)cb.style.display='';
-}
-
-// Bouton "Terminer" pendant la partie
-// Enregistre les stats (NC pour les non-clôturés) et retourne au menu
-function confirmEndGame(){
-  if(!confirm('Terminer la partie ? Les joueurs non clôturés seront comptés NC.')) return;
-  // En solo : sauvegarder les stats avant de quitter
-  if(gs.isSolo){
-    saveStats(loadStatsLocal());
-  }
-  // Enregistrer stats pour TOUS (gagnant d  j   enregistr  , mais recordGameStat est idempotent non     on   vite le double)
-  // Seuls les non encore enregistr  s (pas dans finishOrder comme gagnant) re  oivent leur stat ici
-  // Le gagnant a d  j   eu sa stat via addThrow/endTurn, on n'enregistre que les autres
-  if(gs.isTeam){
-    gs.teams.forEach((t,i)=>{
-      if(i===gs.finishOrder[0]) return; // gagnant d  j   enregistr  
-      const closed = gs.finishOrder.includes(i);
-      const nc = !closed;
-      const realPts = t.members.reduce((s,m)=>{
-        const prev=(gs.realPtsBefore&&gs.realPtsBefore[m])||0;
-        const cur=(loadStatsLocal()[m]||{}).realPoints||0;
-        return s+Math.max(0,cur-prev);
-      },0);
-      recordGameStat(t.name,false,t.dartsThisGame||0,t.members,realPts,nc,nc?0:t.checkoutDarts||0);
-    });
-  } else {
-    gs.players.forEach((p,i)=>{
-      if(i===gs.finishOrder[0]) return; // gagnant d  j   enregistr  
-      const closed = gs.finishOrder.includes(i);
-      const nc = !closed;
-      const prev=(gs.realPtsBefore&&gs.realPtsBefore[p.name])||0;
-      const cur=(loadStatsLocal()[p.name]||{}).realPoints||0;
-      recordGameStat(p.name,false,p.dartsThisGame||0,null,Math.max(0,cur-prev),nc,nc?0:p.checkoutDarts||0);
-    });
-  }
-  gameActive=false;
-  clearGameState();
-  document.getElementById('win-screen').style.display='none';
-  document.querySelector('.bottom-nav').style.display='';
-  document.getElementById('game-page').style.display='none';
-  hideResumeBar();
-  navTo('setup');
-}
-
-// Retour au menu principal
-// force=false -> partie mise en pause (bouton     pendant la partie)
-// force=true  -> abandon d  finitif (bouton Menu sur écran victoire)
 function backToSetup(force=false){
   document.getElementById('win-screen').style.display='none';
   document.querySelector('.bottom-nav').style.display='';
-  // Si partie en cours et pas forc   -> laisser reprendre
-  if(gameActive && !force && document.getElementById('game-page').style.display!=='none'){
+  // Si partie en cours et pas forcé → demander confirmation
+  if(gameActive && !force && document.getElementById('win-screen').style.display==='none'){
     showResumeBar();
     document.getElementById('game-page').style.display='none';
     navTo('setup');
     return;
   }
-  // Force depuis win-screen (bouton "Menu") = enregistrer stats des non-clôturés
-  // Force depuis banni  re "Abandon" = partie abandonn  e, aucune stat
-  // On distingue les deux cas : si finishOrder a des entr  es = quelqu'un a clôturé = vrai abandon post-victoire
-  const someoneFinished = gs && gs.finishOrder && gs.finishOrder.length > 0;
-  if(force && gameActive && gs && (gs.players||gs.teams) && someoneFinished){
-    // Quelqu'un a clôturé -> enregistrer NC pour les autres
-    const winnerId = gs.finishOrder[0];
-    if(gs.isTeam){
-      gs.teams.forEach((t,i)=>{
-        if(i===winnerId) return;
-        const closed = gs.finishOrder.includes(i);
-        const nc = !closed;
-        const realPts = t.members.reduce((s,m)=>{
-          const prev=(gs.realPtsBefore&&gs.realPtsBefore[m])||0;
-          const cur=(loadStatsLocal()[m]||{}).realPoints||0;
-          return s+Math.max(0,cur-prev);
-        },0);
-        recordGameStat(t.name,false,t.dartsThisGame||0,t.members,realPts,nc,nc?0:t.checkoutDarts||0);
-      });
-    } else {
-      gs.players&&gs.players.forEach((p,i)=>{
-        if(i===winnerId) return;
-        const closed = gs.finishOrder.includes(i);
-        const nc = !closed;
-        const prev=(gs.realPtsBefore&&gs.realPtsBefore[p.name])||0;
-        const cur=(loadStatsLocal()[p.name]||{}).realPoints||0;
-        recordGameStat(p.name,false,p.dartsThisGame||0,null,Math.max(0,cur-prev),nc,nc?0:p.checkoutDarts||0);
-      });
-    }
-  }
-  // Si personne n'a clôturé (abandon pur) -> annuler les stats accumul  es pendant la partie
-  if(force && gameActive && gs && !someoneFinished){
-    // Annuler realPoints et totalDarts accumul  s pendant cette partie abandonn  e
-    const s = loadStatsLocal();
-    const names = gs.isTeam ? gs.teams.flatMap(t=>t.members) : (gs.players||[]).map(p=>p.name);
-    names.forEach(name=>{
-      if(!s[name]) return;
-      const prev = (gs.realPtsBefore&&gs.realPtsBefore[name])||0;
-      const cur = s[name].realPoints||0;
-      const diff = Math.max(0, cur - prev);
-      s[name].realPoints = Math.max(0, cur - diff);
-      s[name].totalPoints = Math.max(0, (s[name].totalPoints||0) - diff);
-      // totalDarts accumul  s cette partie
-      const darts = gs.isTeam
-        ? (gs.teams.find(t=>t.members.includes(name))||{}).dartsThisGame||0
-        : (gs.players.find(p=>p.name===name)||{}).dartsThisGame||0;
-      s[name].totalDarts = Math.max(0, (s[name].totalDarts||0) - darts);
-    });
-    saveStats(s);
-  }
-  if(gs&&gs.cricket)cleanupCricket();
+  if(gs&&gs.isCricket)cleanupCricket();
   gameActive=false;
   clearGameState();
   document.getElementById('game-page').style.display='none';
@@ -1407,14 +977,12 @@ function backToSetup(force=false){
   navTo('setup');
 }
 
-// Affiche la banni  re "Partie en cours" sur la page menu/stats
 function showResumeBar(){
   document.getElementById('resume-bar').style.display='flex';
 }
 function hideResumeBar(){
   document.getElementById('resume-bar').style.display='none';
 }
-// Reprend la partie en cours depuis la banni  re de reprise
 function resumeGame(){
   hideResumeBar();
   document.getElementById('game-page').style.display='flex';
@@ -1425,18 +993,13 @@ function resumeGame(){
   renderGame();
 }
 
-// ======================================================
+// ══════════════════════════════════════════════════════
 // CONFIG & SETUP
-// ======================================================
-let cfg={mode:'501',partyType:'solo',players:1,numTeams:2,fin:'simple'};
+// ══════════════════════════════════════════════════════
+let cfg={mode:501,partyType:'solo',players:1,numTeams:2,fin:'simple'};
 let gameActive=false; // true quand une partie est en cours
 let gs={};
 
-// ---------------------------------------------
-// CONFIGURATION DE LA PARTIE (PAGE SETUP)
-// G  re les s  lecteurs de mode, nombre de joueurs,
-// type de partie et saisie des noms
-// ---------------------------------------------
 function makePills(gid,key){
   document.getElementById(gid).querySelectorAll('.pill').forEach(p=>{
     p.addEventListener('click',()=>{
@@ -1456,44 +1019,24 @@ makePills('teamCounts','numTeams');
 makePills('finModes','fin');
 buildNames();
 
-// Bascule entre mode Individuel et mode équipes
-// Affiche/masque les sections correspondantes
-// Adapte l'interface selon le mode choisi
-// En Cricket : masque la section Fin de manche
-function updateSetupForMode(){
-  const isCricket = cfg.mode==='cricket';
-  // Masquer Fin de manche en Cricket (pas applicable)
-  const finSection = document.getElementById('finModes');
-  if(finSection && finSection.closest('.setup-section')){
-    finSection.closest('.setup-section').style.display = isCricket ? 'none' : '';
-  }
-  // En Cricket, remettre fin    'simple' pour éviter les bugs
-  if(isCricket) cfg.fin='simple';
-});
-}
-
 function toggleMode(){
   const t=cfg.partyType!=='solo';
   document.getElementById('sectionPlayers').style.display=t?'none':'block';
   document.getElementById('sectionTeams').style.display=t?'block':'none';
-  document.getElementById('namesLabel').textContent=t?'Noms des joueurs par   quipe':'Noms des joueurs';
+  document.getElementById('namesLabel').textContent=t?'Noms des joueurs par équipe':'Noms des joueurs';
   buildNames();
 }
 
-// ======================================================
-// NOMS M  MORIS  S
-// ======================================================
-// ---------------------------------------------
-// HISTORIQUE DES NOMS DE JOUEURS
-// Sauvegarde les noms utilis  s pour l'autocompl  tion
-// ---------------------------------------------
+// ══════════════════════════════════════════════════════
+// NOMS MÉMORISÉS
+// ══════════════════════════════════════════════════════
 function loadKnownPlayers(){try{return JSON.parse(localStorage.getItem('fl_players')||'[]')}catch(e){return[]}}
 function saveKnownPlayers(a){try{localStorage.setItem('fl_players',JSON.stringify(a))}catch(e){}}
 function addKnownPlayer(name){
   if(!name||name.length<1)return;
   let a=loadKnownPlayers();
   a=a.filter(n=>n!==name); // éviter doublons
-  a.unshift(name); // mettre en t  te
+  a.unshift(name); // mettre en tête
   if(a.length>30)a=a.slice(0,30);
   saveKnownPlayers(a);
 }
@@ -1509,9 +1052,7 @@ function addKnownTeam(name){
   saveKnownTeams(a);
 }
 
-// Cr  e un input avec suggestions int  gr  
-// Cr  e un champ de saisie avec liste d  roulante d'autocompl  tion
-// Affiche les noms d  j   utilis  s, filtre ceux d  j   s  lectionn  s
+// Crée un input avec suggestions intégré
 function makeInputWithSuggestions({id, placeholder, isTeam=false, color=null}){
   const known = isTeam ? loadKnownTeams() : loadKnownPlayers();
   const wrap = document.createElement('div');
@@ -1550,7 +1091,7 @@ function makeInputWithSuggestions({id, placeholder, isTeam=false, color=null}){
   }
 
   function getUsedNames(){
-    // Collecter tous les noms d  j   saisis dans les autres inputs de la page
+    // Collecter tous les noms déjà saisis dans les autres inputs de la page
     const used=new Set();
     document.querySelectorAll('.prow-solo input,.prow-team input').forEach(el=>{
       if(el!==inp&&el.value.trim()) used.add(el.value.trim());
@@ -1566,7 +1107,7 @@ function makeInputWithSuggestions({id, placeholder, isTeam=false, color=null}){
       n!==filter &&
       !used.has(n)
     );
-    // Toujours r  initialiser avant de d  cider
+    // Toujours réinitialiser avant de décider
     drop.style.display='';
     dropOuter.style.display='none';
     if(!matches.length){ return; }
@@ -1575,7 +1116,7 @@ function makeInputWithSuggestions({id, placeholder, isTeam=false, color=null}){
       const item=document.createElement('div');
       item.className=isTeam?'sug-team-item':'sug-item';
       if(color&&isTeam)item.style.color=color;
-      item.innerHTML=`<span class="${isTeam?'':'sug-name'}">${name}</span><span class="sug-del" data-name="${name}">  </span>`;
+      item.innerHTML=`<span class="${isTeam?'':'sug-name'}">${name}</span><span class="sug-del" data-name="${name}">×</span>`;
       item.addEventListener('mousedown',e=>{
         if(e.target.classList.contains('sug-del'))return;
         e.preventDefault();inp.value=name;dropOuter.style.display='none';
@@ -1590,7 +1131,7 @@ function makeInputWithSuggestions({id, placeholder, isTeam=false, color=null}){
         if(e.target.classList.contains('sug-del'))return;
         const dy=Math.abs(e.changedTouches[0].clientY - touchStartY);
         const dx=Math.abs(e.changedTouches[0].clientX - touchStartX);
-        // Si d  placement > 8px = scroll, on ne s  lectionne pas
+        // Si déplacement > 8px = scroll, on ne sélectionne pas
         if(dy > 8 || dx > 8) return;
         e.preventDefault();inp.value=name;dropOuter.style.display='none';
       });
@@ -1625,7 +1166,7 @@ function makeInputWithSuggestions({id, placeholder, isTeam=false, color=null}){
   }
 
   inp.addEventListener('focus',()=>renderDrop(inp.value));
-  inp.addEventListener('click',()=>renderDrop(inp.value));  // rouvre apr  s effacement
+  inp.addEventListener('click',()=>renderDrop(inp.value));  // rouvre après effacement
   inp.addEventListener('input',()=>renderDrop(inp.value));
   inp.addEventListener('blur',()=>setTimeout(()=>{ dropOuter.style.display='none'; },300));
   document.addEventListener('scroll',()=>{ if(dropOuter.style.display!=='none') positionDrop(); },true);
@@ -1634,8 +1175,6 @@ function makeInputWithSuggestions({id, placeholder, isTeam=false, color=null}){
   return wrap;
 }
 
-// Construit les champs de saisie des noms de joueurs
-// avec autocompl  tion depuis l'historique des noms
 function buildNames(){
   const c=document.getElementById('playerNames');c.innerHTML='';
   if(cfg.partyType==='solo'){
@@ -1654,7 +1193,7 @@ function buildNames(){
     for(let t=0;t<cfg.numTeams;t++){
       const col=TCOLS[t];
       const block=document.createElement('div');block.className='team-block';
-      // Header avec input nom d'  quipe + suggestions
+      // Header avec input nom d'équipe + suggestions
       const header=document.createElement('div');header.className='team-header';
       const dot=document.createElement('div');dot.className='team-dot';dot.style.background=col;
       const teamInputWrap=makeInputWithSuggestions({id:`tn${t}`,placeholder:TNAMES[t],isTeam:true,color:col});
@@ -1674,14 +1213,157 @@ function buildNames(){
   }
 }
 
-// ======================================================
-// D  MARRAGE
-// ======================================================
-// ---------------------------------------------
-// D  MARRAGE D'UNE PARTIE
-// Initialise l'état du jeu selon la configuration
-// (mode solo/équipes, nombre de joueurs, mode de fin)
-// ---------------------------------------------
+// ══════════════════════════════════════════════════════
+// DÉMARRAGE
+// ══════════════════════════════════════════════════════
+
+// =====================================================
+// MODE CRICKET
+// Zones : 15, 16, 17, 18, 19, 20, Bull (25)
+// Fermer une zone = 3 touches (S=1, D=2, T=3)
+// Gagne le premier a fermer toutes les zones
+// =====================================================
+const CRICKET_ZONES=[20,19,18,17,16,15,25];
+
+function renderCricket(){
+  const sb=document.getElementById('scoreboard');
+  const players=gs.isTeam?gs.teams:gs.players;
+  const cur=gs.isTeam?gs.curTeam:gs.cur;
+  const cols=players.length;
+  const gridCols='60px repeat('+cols+',1fr)';
+  let html='<div class="cricket-board">';
+
+  // Header noms
+  html+='<div style="display:grid;grid-template-columns:'+gridCols+';gap:8px;padding:4px 12px">';
+  html+='<div></div>';
+  players.forEach((p,i)=>{
+    html+='<div class="cricket-player'+(i===cur?' active-col':'')+'">'+(gs.isTeam?p.name:p.name)+'</div>';
+  });
+  html+='</div>';
+
+  // Lignes zones
+  CRICKET_ZONES.forEach(zone=>{
+    const lbl=zone===25?'Bull':zone;
+    html+='<div class="cricket-row" style="display:grid;grid-template-columns:'+gridCols+';gap:8px">';
+    html+='<div class="cricket-zone">'+lbl+'</div>';
+    players.forEach((p,i)=>{
+      const hits=p.cricket[zone]||0;
+      if(hits>=3){
+        html+='<div class="cricket-done">✓</div>';
+      } else {
+        html+='<div class="cricket-marks">';
+        for(let m=1;m<=3;m++) html+='<div class="cricket-mark'+(hits>=m?' hit':'')+'"></div>';
+        html+='</div>';
+      }
+    });
+    html+='</div>';
+  });
+
+  // Tour en cours
+  html+='<div style="padding:8px 12px;font-family:var(--mono);font-size:12px;color:var(--muted);text-align:center">';
+  if(gs.throws.length>0){
+    html+=gs.throws.map(t=>t.label).join(' · ');
+  } else {
+    html+='Tour de <span style="color:var(--accent)">'+players[cur].name+'</span>';
+  }
+  html+='</div></div>';
+  sb.innerHTML=html;
+
+  // Masquer elements normaux, afficher clavier Cricket
+  document.getElementById('checkoutBox').style.display='none';
+  const tl=document.querySelector('.throw-log');
+  if(tl)tl.style.display='none';
+  const nb=document.querySelector('.numpad');
+  if(nb)nb.style.display='none';
+  buildCricketNumpad();
+}
+
+function buildCricketNumpad(){
+  let np=document.getElementById('cricket-numpad');
+  if(!np){
+    np=document.createElement('div');
+    np.id='cricket-numpad';
+    np.className='cricket-numpad';
+    document.getElementById('game-page').appendChild(np);
+  }
+  np.style.display='grid';
+  const m=gs.mult||1;
+  const btns=[20,19,18,17,16,15,'Bull','Rate'];
+  np.innerHTML='<button class="cnb'+(m===1?' mult-active':'')+'" onclick="setCricketMult(1)">S</button>'
+    +'<button class="cnb'+(m===2?' mult-active':'')+'" onclick="setCricketMult(2)">D</button>'
+    +'<button class="cnb'+(m===3?' mult-active':'')+'" onclick="setCricketMult(3)">T</button>'
+    +'<button class="cnb miss" onclick="addThrowCricket(0)">Rate</button>'
+    +btns.filter(v=>v!=='Rate').map(v=>{
+      const lbl=v==='Bull'?'Bull':v;
+      return '<button class="cnb'+(v==='Bull'?' bull':'')+'" onclick="addThrowCricket(''+v+'')">'+lbl+'</button>';
+    }).join('');
+}
+
+function setCricketMult(m){
+  gs.mult=m;
+  buildCricketNumpad();
+}
+
+function addThrowCricket(val){
+  const players=gs.isTeam?gs.teams:gs.players;
+  const cur=gs.isTeam?gs.curTeam:gs.cur;
+  const p=players[cur];
+  const pName=p.name;
+  const mult=gs.mult||1;
+
+  let zone=null, label='';
+  if(val===0||val==='Rate'){ label='Rate'; }
+  else if(val==='Bull'){ zone=25; label=(mult===2?'D':mult===3?'T':'')+'Bull'; }
+  else {
+    zone=parseInt(val);
+    label=(mult===1?'S':mult===2?'D':'T')+zone;
+  }
+
+  gs.throws.push({label,pts:0});
+  recordThrowStat(pName,label,0);
+  if(gs.isTeam) gs.teams[cur].dartsThisGame=(gs.teams[cur].dartsThisGame||0)+1;
+  else gs.players[cur].dartsThisGame=(gs.players[cur].dartsThisGame||0)+1;
+
+  // Appliquer les touches
+  if(zone!==null && CRICKET_ZONES.includes(zone) && p.cricket[zone]<3){
+    p.cricket[zone]=Math.min(3,(p.cricket[zone]||0)+mult);
+  }
+  gs.mult=1;
+
+  // Verifier victoire
+  if(CRICKET_ZONES.every(z=>p.cricket[z]>=3)){
+    gs.finishOrder.push(cur);
+    recordGameStat(pName,true,p.dartsThisGame||0);
+    renderCricket();
+    setTimeout(handleRoundEnd,120);
+    return;
+  }
+
+  renderCricket();
+  if(gs.throws.length>=3) setTimeout(()=>{nextTurn();},300);
+}
+
+function cleanupCricket(){
+  const np=document.getElementById('cricket-numpad');
+  if(np)np.remove();
+  const tl=document.querySelector('.throw-log');
+  if(tl)tl.style.display='';
+  const nb=document.querySelector('.numpad');
+  if(nb)nb.style.display='';
+  const cb=document.getElementById('checkoutBox');
+  if(cb)cb.style.display='';
+}
+
+// Masque la section Fin de manche quand Cricket est selectionne
+function updateGameMode(){
+  const isCricket=cfg.mode==='cricket';
+  const finSection=document.getElementById('finModes');
+  if(finSection&&finSection.closest('.setup-section')){
+    finSection.closest('.setup-section').style.display=isCricket?'none':'';
+  }
+  if(isCricket)cfg.fin='simple';
+}
+
 function startGame(){
   const isTeam=cfg.partyType!=='solo';
   const ppt=cfg.partyType==='team2'?2:3;
@@ -1692,57 +1374,43 @@ function startGame(){
       for(let p=0;p<ppt;p++){const v=document.getElementById(`pn${t}_${p}`)?.value.trim();members.push(v||`Joueur ${t*ppt+p+1}`);}
       const tNameVal=document.getElementById(`tn${t}`)?.value.trim();
       const tName=tNameVal||TNAMES[t];
-      teams.push({name:tName,color:TCOLS[t],members,score:cfg.mode==='cricket'?0:parseInt(cfg.mode)||501,legs:0,finishRank:null,memberIdx:0,dartsThisGame:0,checkoutDarts:0});
+      teams.push({name:tName,color:TCOLS[t],members,score:cfg.mode==='cricket'?0:parseInt(cfg.mode)||501,legs:0,finishRank:null,memberIdx:0,dartsThisGame:0});
     }
-    // M  moriser les noms utilis  s
+    // Mémoriser les noms utilisés
     teams.forEach(t=>{addKnownTeam(t.name);t.members.forEach(m=>addKnownPlayer(m));});
-      gs={mode:cfg.mode==='cricket'?'cricket':parseInt(cfg.mode)||501,fin:cfg.fin,isTeam:true,ppt,teams,curTeam:0,throws:[],mult:1,finishOrder:[]};
+    gs={mode:cfg.mode,fin:cfg.fin,isTeam:true,ppt,teams,curTeam:0,throws:[],mult:1,finishOrder:[]};
   } else {
     const names=[];
     for(let i=0;i<cfg.players;i++){const v=document.getElementById('pn'+i)?.value.trim();names.push(v||(cfg.players===1?'Vous':'Joueur '+(i+1)));}
     names.forEach(n=>addKnownPlayer(n));
     gs={mode:cfg.mode,fin:cfg.fin,isTeam:false,
-      players:names.map(n=>({name:n,score:cfg.mode==='cricket'?0:parseInt(cfg.mode)||501,legs:0,finishRank:null,dartsThisGame:0,checkoutDarts:0})),
+      players:names.map(n=>({name:n,score:cfg.mode==='cricket'?0:parseInt(cfg.mode)||501,legs:0,finishRank:null,dartsThisGame:0})),
       cur:0,throws:[],mult:1,finishOrder:[]};
   }
   gameActive=true;
-  gs.turnHistory=[];
-  gs.statsRecorded=new Set();
-  gs.isSolo=(!isTeam && cfg.players===1);
-  // En Cricket : initialiser les compteurs de zones pour chaque joueur/  quipe
   if(cfg.mode==='cricket'){
-    const CRICKET_ZONES=[15,16,17,18,19,20,25];
-    const initCricket=()=>Object.fromEntries(CRICKET_ZONES.map(z=>[z,0])); // 0,1,2,3 touches
-    if(isTeam) gs.teams.forEach(t=>t.cricket=initCricket());
-    else gs.players.forEach(p=>p.cricket=initCricket());
-    gs.mode='cricket';gs.cricket=true;
+    const CZ=[20,19,18,17,16,15,25];
+    const ic=()=>Object.fromEntries(CZ.map(z=>[z,0]));
+    if(gs.isTeam)gs.teams.forEach(t=>{t.cricket=ic();});
+    else gs.players.forEach(p=>{p.cricket=ic();});
+    gs.isCricket=true;
   }
-  // M  moriser les realPoints de chaque joueur au d  part pour calculer les pts de cette partie
-  const initStats=loadStatsLocal();
-  gs.realPtsBefore={};
-  const pNames=gs.isTeam?gs.teams.flatMap(t=>t.members):gs.players.map(p=>p.name);
-  pNames.forEach(n=>{gs.realPtsBefore[n]=(initStats[n]||{}).realPoints||0;});
+  gs.turnHistory=[];
   navTo('game');
   renderGame();
 }
 
-// ======================================================
+// ══════════════════════════════════════════════════════
 // RENDU JEU
-// ======================================================
-// ---------------------------------------------
-// RENDU DE L'  CRAN DE JEU
-// Met    jour le scoreboard, les conseils de sortie,
-// les indicateurs de lancer et le clavier num  rique
-// ---------------------------------------------
+// ══════════════════════════════════════════════════════
 function renderGame(){
-  document.getElementById('modeBadge').textContent=gs.mode+'    '+gs.fin+(gs.isTeam?'    équipes':'');
-  if(gs.cricket){ renderCricket(); return; }
+  if(gs.isCricket){renderCricket();return;}
+  document.getElementById('modeBadge').textContent=gs.mode+' · '+gs.fin+(gs.isTeam?' · Équipes':'');
   gs.isTeam?renderSBTeams():renderSBSolo();
 
   const baseScore=gs.isTeam?gs.teams[gs.curTeam].score:gs.players[gs.cur].score;
   const throwsTotal=gs.throws.reduce((s,t)=>s+t.pts,0);
   const sc=baseScore-throwsTotal;
-  if(gs.cricket){document.getElementById('checkoutBox').style.display='none';return;}
   const hints=getCheckout(sc,gs.fin);
   const cb=document.getElementById('checkoutBox');
   if(hints.length&&sc<=170){
@@ -1752,10 +1420,10 @@ function renderGame(){
   } else cb.style.display='none';
 
   let label='';
-  if(gs.isTeam){const t=gs.teams[gs.curTeam];label=`<span style="color:${t.color};font-weight:600">${t.name}</span>     ${t.members[t.memberIdx]}`;}
+  if(gs.isTeam){const t=gs.teams[gs.curTeam];label=`<span style="color:${t.color};font-weight:600">${t.name}</span> — ${t.members[t.memberIdx]}`;}
   else label=gs.players[gs.cur].name;
   const left=3-gs.throws.length;
-  document.getElementById('turnName').innerHTML=label+` <small style="color:var(--muted);font-size:11px">   ${left} lancer${left>1?'s':''}</small>`;
+  document.getElementById('turnName').innerHTML=label+` <small style="color:var(--muted);font-size:11px">· ${left} lancer${left>1?'s':''}</small>`;
 
   const dots=document.getElementById('dartDots');dots.innerHTML='';
   for(let i=0;i<3;i++){const d=document.createElement('div');d.className='dot'+(i<gs.throws.length?' thrown':'');dots.appendChild(d);}
@@ -1763,8 +1431,6 @@ function renderGame(){
   document.getElementById('validateBtn').disabled=gs.throws.length===0;
 }
 
-// Rendu du scoreboard en mode équipes
-// Affiche le score, le score live (pendant la vol  e), les membres
 function renderSBTeams(){
   const sb=document.getElementById('scoreboard');sb.innerHTML='';
   gs.teams.forEach((t,i)=>{
@@ -1772,28 +1438,19 @@ function renderSBTeams(){
     const d=document.createElement('div');d.className='team-card'+(finished?' finished':'');
     if(active)d.style.borderColor=t.color;
     const bar=document.createElement('div');bar.className='tc-bar';bar.style.background=t.color;d.appendChild(bar);
-    const mHtml=t.members.map((m,mi)=>`<span style="color:${active&&mi===t.memberIdx?t.color:'var(--muted)'};font-weight:${active&&mi===t.memberIdx?600:400}">${m}</span>`).join('    ');
+    const mHtml=t.members.map((m,mi)=>`<span style="color:${active&&mi===t.memberIdx?t.color:'var(--muted)'};font-weight:${active&&mi===t.memberIdx?600:400}">${m}</span>`).join(' · ');
     const inner=document.createElement('div');
-    inner.innerHTML=`<div class="tc-name" style="color:${active?t.color:'var(--muted)'}">${t.name}</div><div class="tc-score" style="${finished?'color:var(--green)':''}">${finished?'   ':t.score}</div><div class="tc-legs">${t.legs} manche${t.legs!==1?'s':''}</div><div class="tc-members">${mHtml}</div>`;
+    inner.innerHTML=`<div class="tc-name" style="color:${active?t.color:'var(--muted)'}">${t.name}</div><div class="tc-score" style="${finished?'color:var(--green)':''}">${finished?'✓':t.score}</div><div class="tc-legs">${t.legs} manche${t.legs!==1?'s':''}</div><div class="tc-members">${mHtml}</div>`;
     d.appendChild(inner);sb.appendChild(d);
   });
 }
 
-// Rendu du scoreboard en mode Individuel
-// Affiche le score principal et le score live sous le score actif
 function renderSBSolo(){
   const sb=document.getElementById('scoreboard');sb.innerHTML='';
-  const throwsTotal=gs.throws.reduce((s,t)=>s+t.pts,0);
   gs.players.forEach((pl,i)=>{
     const active=i===gs.cur,finished=pl.score===0;
-    const d=document.createElement('div');
-    d.className='player-card'+(active?' active':'')+(finished?' finished':'');
-    const liveScore = active && !finished && gs.throws.length>0 ? pl.score - throwsTotal : null;
-    const liveOk = liveScore!==null && (liveScore>1 || (liveScore===1&&gs.fin==='simple') || liveScore===0);
-    const liveHtml = active && !finished && gs.throws.length>0
-      ? `<div class="pc-live">${liveOk ? liveScore : '    bust'}</div>`
-      : `<div class="pc-live"></div>`;
-    d.innerHTML=`<div class="pc-name">${pl.name}</div><div class="pc-score">${finished?'   ':pl.score}</div>${liveHtml}<div class="pc-legs">${pl.legs} manche${pl.legs!==1?'s':''}</div>`;
+    const d=document.createElement('div');d.className='player-card'+(active?' active':'')+(finished?' finished':'');
+    d.innerHTML=`<div class="pc-name">${pl.name}</div><div class="pc-score">${finished?'✓':pl.score}</div><div class="pc-legs">${pl.legs} manche${pl.legs!==1?'s':''}</div>`;
     sb.appendChild(d);
   });
 }
@@ -1803,28 +1460,28 @@ function renderLog(){
   if(!gs.throws.length){log.innerHTML='';return;}
   log.innerHTML='';let sum=0;
   gs.throws.forEach(t=>{sum+=t.pts;const tg=document.createElement('span');tg.className='throw-tag';tg.textContent=t.label;log.appendChild(tg);});
-  const tot=document.createElement('span');tot.className='throw-total';tot.textContent='   '+sum;log.appendChild(tot);
+  const tot=document.createElement('span');tot.className='throw-total';tot.textContent='−'+sum;log.appendChild(tot);
 }
 
-// Construit le clavier num  rique (1-20, B25, Bull 50, Rat  )
 function buildNumpad(){
   const pad=document.getElementById('numpad');pad.innerHTML='';
   [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,'B25','B50','0'].forEach(n=>{
     const b=document.createElement('div');
     let cls='num-btn',label=n;
-    if(n==='B25'){cls+=' bull';label='B25';}
+    if(n==='B25'){cls+=' bull';label='Bull';}
     else if(n==='B50'){cls+=' dbull';label='Bull 50';}
-    else if(n===0||n==='0'){cls+=' miss';label='   ';}
+    else if(n===0||n==='0'){cls+=' miss';label='✗';}
     b.className=cls;b.textContent=label;b.onclick=()=>addThrow(n);pad.appendChild(b);
   });
 }
 
-// ======================================================
+// ══════════════════════════════════════════════════════
 // LOGIQUE
-// ======================================================
+// ══════════════════════════════════════════════════════
 function isValidFinish(lastT){
-  if(gs.fin==='double')return lastT.label==='Bull 50'||lastT.label.startsWith('D');
-  return true;
+  if(gs.fin==='simple')return true;
+  // double : finir sur D ou Bull 50
+  return lastT.label==='Bull 50'||lastT.label.startsWith('D');
 }
 function curScore(){return gs.isTeam?gs.teams[gs.curTeam].score:gs.players[gs.cur].score;}
 function applyScore(v){if(gs.isTeam)gs.teams[gs.curTeam].score=v;else gs.players[gs.cur].score=v;}
@@ -1833,16 +1490,8 @@ function curPlayerName(){
   return gs.players[gs.cur].name;
 }
 function incDarts(){
-  // Seuil checkout : 170 en double/master, score de d  part en simple
-  // Simple : max en 3 fl  chettes = T20  3 = 180. Double/master : max = 170 (finir sur double)
-  const checkoutThreshold = gs.fin==='simple' ? 180 : 170; // double/cricket
-  if(gs.isTeam){
-    gs.teams[gs.curTeam].dartsThisGame=(gs.teams[gs.curTeam].dartsThisGame||0)+1;
-    if(curScore()<=checkoutThreshold) gs.teams[gs.curTeam].checkoutDarts=(gs.teams[gs.curTeam].checkoutDarts||0)+1;
-  } else {
-    gs.players[gs.cur].dartsThisGame=(gs.players[gs.cur].dartsThisGame||0)+1;
-    if(curScore()<=checkoutThreshold) gs.players[gs.cur].checkoutDarts=(gs.players[gs.cur].checkoutDarts||0)+1;
-  }
+  if(gs.isTeam)gs.teams[gs.curTeam].dartsThisGame=(gs.teams[gs.curTeam].dartsThisGame||0)+1;
+  else gs.players[gs.cur].dartsThisGame=(gs.players[gs.cur].dartsThisGame||0)+1;
 }
 function recordFinish(idx){
   if(!gs.finishOrder.includes(idx)){
@@ -1852,21 +1501,15 @@ function recordFinish(idx){
   }
 }
 
-// Active le multiplicateur Simple/Double/Triple
 function setMult(m){gs.mult=m;[1,2,3].forEach(x=>document.getElementById('m'+x).classList.toggle('active',x===m));}
 
-// ---------------------------------------------
-// SAISIE D'UN LANCER
-// Appel      chaque appui sur un bouton du clavier
-// ---------------------------------------------
 function addThrow(n){
-  // Mode Cricket : logique enti  rement différente
-  if(gs.cricket){ addThrowCricket(n); return; }
+  if(gs.isCricket){addThrowCricket(n);return;}
   if(gs.throws.length>=3)return;
   let pts=0,label='';
   if(n==='B25'){pts=25;label='Bull 25';}
   else if(n==='B50'){pts=50;label='Bull 50';}
-  else if(n===0||n==='0'){pts=0;label='Rat  ';}
+  else if(n===0||n==='0'){pts=0;label='Raté';}
   else{pts=n*gs.mult;const pfx=gs.mult===2?'D':gs.mult===3?'T':'S';label=pfx+n+(gs.mult>1?' ('+pts+')':'');}
   gs.throws.push({pts,label});
   // stats
@@ -1886,27 +1529,23 @@ function addThrow(n){
     const isWinner=gs.finishOrder.length===1;
     const statName=gs.isTeam?gs.teams[gs.curTeam].name:pName;
     const dartCount=gs.isTeam?gs.teams[gs.curTeam].dartsThisGame:gs.players[gs.cur].dartsThisGame;
-    const checkoutDarts=gs.isTeam?gs.teams[gs.curTeam].checkoutDarts:gs.players[gs.cur].checkoutDarts;
     const teamMembers=gs.isTeam?gs.teams[gs.curTeam].members:null;
-    const pStats=loadStatsLocal();
-    const realPts=(pStats[pName]||{}).realPoints||0;
-    const prevRealPts=(gs.realPtsBefore&&gs.realPtsBefore[pName])||0;
-    recordGameStat(statName,isWinner,dartCount,teamMembers,Math.max(0,realPts-prevRealPts),false,checkoutDarts);
+    recordGameStat(statName,isWinner,dartCount,teamMembers);
     renderGame();
     setTimeout(handleRoundEnd,120);
     return;
   }
-  // Bust imm  diat si score n  gatif (même en cours de vol  e)
-  // Note : score===1 est g  r   en fin de tour (bust seulement en mode double/master)
+  // Bust immédiat si score négatif (même en cours de volée)
+  // Note : score===1 est géré en fin de tour (bust seulement en mode double/master)
   if(newScore<0){
-    flash('Bust ! Score inchang   -> '+curScore(),'err');
-    // Bust : annuler totalPoints mais garder realPoints (points r  ellement touch  s)
-    // et garder numberHits (zones touch  es r  elles)
+    flash('Bust ! Score inchangé → '+curScore(),'err');
+    // Bust : annuler totalPoints mais garder realPoints (points réellement touchés)
+    // et garder numberHits (zones touchées réelles)
     gs.throws.forEach(t=>{
       const s=loadStatsLocal();
       if(s[pName]){
         s[pName].totalPoints=Math.max(0,(s[pName].totalPoints||0)-t.pts);
-        // realPoints et numberHits restent : la fl  chette a bien touch   ces zones
+        // realPoints et numberHits restent : la fléchette a bien touché ces zones
         saveStats(s);
       }
     });
@@ -1922,26 +1561,23 @@ function addThrow(n){
   if(gs.throws.length===3)endTurn();
 }
 
-// Annule les stats d'un lancer (appel   par undoThrow)
 function undoStatThrow(pName, t){
   // Annule la stat d'un lancer
   const s=loadStatsLocal();
-  if(s[pName] && !s[pName]._deleted){
+  if(s[pName]){
     s[pName].totalDarts=Math.max(0,(s[pName].totalDarts||1)-1);
     s[pName].totalPoints=Math.max(0,(s[pName].totalPoints||0)-t.pts);
     s[pName].realPoints=Math.max(0,(s[pName].realPoints||0)-t.pts);
     let num=null;
     if(t.label==='Bull 25')num='bull';
     else if(t.label==='Bull 50')num='dbull';
-    else if(t.label==='Rat  ')num='miss';
+    else if(t.label==='Raté')num='miss';
     else{const m=t.label.match(/[DTS]?(\d+)/);if(m)num=parseInt(m[1]);}
     if(num!==null&&s[pName].numberHits&&s[pName].numberHits[num]>0)s[pName].numberHits[num]--;
     saveStats(s);
   }
 }
 
-// Annule le dernier lancer
-// Si la vol  e est vide -> revient au tour du joueur pr  c  dent
 function undoThrow(){
   if(gs.throws.length>0){
     // Annuler le dernier lancer du joueur courant
@@ -1952,23 +1588,21 @@ function undoThrow(){
     else gs.players[gs.cur].dartsThisGame=Math.max(0,(gs.players[gs.cur].dartsThisGame||1)-1);
     gs.throws.pop();setMult(1);renderGame();
   } else {
-    // Pas de lancer en cours -> revenir au joueur pr  c  dent
+    // Pas de lancer en cours → revenir au joueur précédent
     undoPreviousTurn();
   }
 }
 
-// Revient au tour du joueur pr  c  dent
-// Restaure son score et ses 3 lancers pour modification
 function undoPreviousTurn(){
   if(!gs.turnHistory||!gs.turnHistory.length){
-    flash('Impossible de revenir plus en arri  re','err');
+    flash('Impossible de revenir plus en arrière','err');
     return;
   }
 
-  // Restaurer le dernier tour sauvegard  
+  // Restaurer le dernier tour sauvegardé
   const lastTurn=gs.turnHistory.pop();
 
-  // Revenir au joueur/  quipe du tour pr  c  dent
+  // Revenir au joueur/équipe du tour précédent
   if(gs.isTeam) gs.curTeam=lastTurn.playerIdx;
   else gs.cur=lastTurn.playerIdx;
 
@@ -1976,7 +1610,7 @@ function undoPreviousTurn(){
   if(gs.isTeam) gs.teams[lastTurn.playerIdx].score=lastTurn.scoreBefore;
   else gs.players[lastTurn.playerIdx].score=lastTurn.scoreBefore;
 
-  // Annuler les stats des lancers du tour pr  c  dent
+  // Annuler les stats des lancers du tour précédent
   const prevName=lastTurn.playerName;
   lastTurn.throws.forEach(t=>{
     undoStatThrow(prevName,t);
@@ -1991,18 +1625,12 @@ function undoPreviousTurn(){
   renderGame();
 }
 
-// Affiche un message flash (confirmation ou erreur) sous le scoreboard
 function flash(msg,type,dur=1800){
   const el=document.getElementById('flashMsg');
   el.textContent=msg;el.className='flash-msg '+type;el.style.display='block';
   setTimeout(()=>el.style.display='none',dur);
 }
 
-// ---------------------------------------------
-// VALIDATION D'UN TOUR
-// V  rifie le bust, applique le score,
-// enregistre les stats et passe au joueur suivant
-// ---------------------------------------------
 function endTurn(){
   if(!gs.throws.length)return;
   const total=gs.throws.reduce((s,t)=>s+t.pts,0);
@@ -2010,11 +1638,10 @@ function endTurn(){
   const lastT=gs.throws[gs.throws.length-1];
   const pName=curPlayerName();
 
-  // Pas de bust en Cricket (logique g  r  e par addThrowCricket)
-  if(gs.cricket){ setTimeout(nextTurn,100); return; }
-  // Score n  gatif = bust
+  // Score négatif = bust toujours
+  // Score = 1 = bust seulement en mode double/master (impossible de finir sur S1)
   if(newScore<0||(newScore===1&&gs.fin!=='simple')){
-    flash('Bust ! Score inchang   -> '+curScore(),'err');
+    flash('Bust ! Score inchangé → '+curScore(),'err');
     setTimeout(nextTurn,1800);return;
   }
   if(newScore===0){
@@ -2025,34 +1652,25 @@ function endTurn(){
     const isWinner2=gs.finishOrder.length===1;
     const statName2=gs.isTeam?gs.teams[gs.curTeam].name:pName;
     const dartCount2=gs.isTeam?gs.teams[gs.curTeam].dartsThisGame:gs.players[gs.cur].dartsThisGame;
-    const checkoutDarts2=gs.isTeam?gs.teams[gs.curTeam].checkoutDarts:gs.players[gs.cur].checkoutDarts;
     const teamMembers2=gs.isTeam?gs.teams[gs.curTeam].members:null;
-    const pStats2=loadStatsLocal();
-    const realPts2=(pStats2[pName]||{}).realPoints||0;
-    const prevRealPts2=(gs.realPtsBefore&&gs.realPtsBefore[pName])||0;
-    recordGameStat(statName2,isWinner2,dartCount2,teamMembers2,Math.max(0,realPts2-prevRealPts2),false,checkoutDarts2);
+    recordGameStat(statName2,isWinner2,dartCount2,teamMembers2);
     handleRoundEnd();return;
   }
   applyScore(newScore);
   recordTurnStat(pName, total);
-  flash('   '+total+' -> '+newScore+' restant','ok');
+  flash('−'+total+' → '+newScore+' restant','ok');
   setTimeout(nextTurn,1400);
 }
 
-// Passe au joueur/  quipe suivant(e)
-// Sauvegarde le tour dans l'historique (pour le retour arri  re)
-// Saute les joueurs/équipes d  j   clôturés
 function nextTurn(){
-  // Sauvegarder le tour dans l'historique pour permettre le retour arri  re
+  // Sauvegarder le tour dans l'historique pour permettre le retour arrière
   const pName=curPlayerName();
   const scoreBefore=gs.isTeam?gs.teams[gs.curTeam].score:gs.players[gs.cur].score;
   gs.turnHistory=gs.turnHistory||[];
-  // scoreBefore = score du joueur AVANT ce tour = score actuel + points de cette vol  e
-  const throwsTotal=gs.throws.reduce((s,t)=>s+t.pts,0);
   gs.turnHistory.push({
     playerIdx:gs.isTeam?gs.curTeam:gs.cur,
     playerName:pName,
-    scoreBefore:scoreBefore+throwsTotal,
+    scoreBefore:scoreBefore+(gs.throws.reduce((s,t)=>s+t.pts,0)), // score avant ce tour
     throws:[...gs.throws]
   });
   // Garder max 10 tours en historique
@@ -2074,13 +1692,10 @@ function nextTurn(){
   renderGame();
 }
 
-// ======================================================
+// ══════════════════════════════════════════════════════
 // FIN DE MANCHE
-// ======================================================
-// G  re la fin d'une manche (quand un joueur clôture)
-// D  cide si on affiche l'écran de victoire ou si on continue
+// ══════════════════════════════════════════════════════
 function handleRoundEnd(){
-  if(gs.isSolo){ saveStats(loadStatsLocal()); }
   const multi=gs.isTeam?gs.teams.length>1:gs.players.length>1;
   const stillPlaying=gs.isTeam?gs.teams.filter(t=>t.score>0).length:gs.players.filter(p=>p.score>0).length;
   if(!multi||stillPlaying===0){showFinalRanking();return;}
@@ -2094,42 +1709,18 @@ function handleRoundEnd(){
   document.querySelector('.bottom-nav').style.display='none';
   setTimeout(launchConfetti,80);
   document.getElementById('winTitle').textContent=wName+' remporte la manche !';
-  document.getElementById('winSub').textContent=wLegs+' manche'+(wLegs!==1?'s':'')+' gagn  e'+(wLegs!==1?'s':'');
+  document.getElementById('winSub').textContent=wLegs+' manche'+(wLegs!==1?'s':'')+' gagnée'+(wLegs!==1?'s':'');
   renderWinTable();
   renderWinGameStats();
   document.getElementById('continueBtn').style.display='block';
 }
 
-// Affiche le classement final avec les rangs V/D/NC
-// Enregistre les stats pour tous les non-gagnants
 function showFinalRanking(){
-  // En solo : sauvegarder les stats locales (realPoints/totalDarts accumul  s)
-  if(gs.isSolo){
-    saveStats(loadStatsLocal());
-  }
-  // Enregistrer stats pour tous les non-gagnants
-  const winnerId = gs.finishOrder.length>0 ? gs.finishOrder[0] : -1;
+  // record résultats pour les non-finis
   if(gs.isTeam){
-    gs.teams.forEach((t,i)=>{
-      if(i===winnerId) return; // gagnant d  j   enregistr  
-      const closed = gs.finishOrder.includes(i); // a clôturé mais pas 1er = D
-      const nc = !closed; // n'a pas clôturé = NC
-      const realPts = t.members.reduce((s,m)=>{
-        const prev=(gs.realPtsBefore&&gs.realPtsBefore[m])||0;
-        const cur=(loadStatsLocal()[m]||{}).realPoints||0;
-        return s+Math.max(0,cur-prev);
-      },0);
-      recordGameStat(t.name,false,t.dartsThisGame||0,t.members,realPts,nc,nc?0:t.checkoutDarts||0);
-    });
+    gs.teams.forEach((t,i)=>{if(t.score>0)recordGameStat(t.name,false,0,t.members);});
   } else {
-    gs.players.forEach((p,i)=>{
-      if(i===winnerId) return; // gagnant d  j   enregistr  
-      const closed = gs.finishOrder.includes(i); // D
-      const nc = !closed; // NC
-      const prev=(gs.realPtsBefore&&gs.realPtsBefore[p.name])||0;
-      const cur=(loadStatsLocal()[p.name]||{}).realPoints||0;
-      recordGameStat(p.name,false,p.dartsThisGame||0,null,Math.max(0,cur-prev),nc,nc?0:p.checkoutDarts||0);
-    });
+    gs.players.forEach((p,i)=>{if(p.score>0)recordGameStat(p.name,false,0);});
   }
   const multi=gs.isTeam?gs.teams.length>1:gs.players.length>1;
   const wi=gs.finishOrder.length>0?gs.finishOrder[0]:0;
@@ -2137,16 +1728,14 @@ function showFinalRanking(){
   const wLegs=gs.isTeam?gs.teams[wi].legs:gs.players[wi].legs;
   document.getElementById('win-screen').style.display='flex';
   document.querySelector('.bottom-nav').style.display='none';
-  document.getElementById('winTitle').textContent=multi?(wName+' remporte la manche !'):'Partie termin  e !';
-  document.getElementById('winSub').textContent=multi?'Classement final':(wLegs+' manche'+(wLegs!==1?'s':'')+' gagn  e'+(wLegs!==1?'s':''));
+  document.getElementById('winTitle').textContent=multi?(wName+' remporte la manche !'):'Partie terminée !';
+  document.getElementById('winSub').textContent=multi?'Classement final':(wLegs+' manche'+(wLegs!==1?'s':'')+' gagnée'+(wLegs!==1?'s':''));
   document.getElementById('continueBtn').style.display='none';
   setTimeout(launchConfetti,80);
   renderWinTable();
   renderWinGameStats();
 }
 
-// Affiche les stats de la partie qui vient de se terminer
-// (sur l'écran de victoire)
 function renderWinGameStats(){
   const el=document.getElementById('win-game-stats');
   if(!el)return;
@@ -2157,15 +1746,15 @@ function renderWinGameStats(){
   } else {
     playerList=gs.players.map(p=>p.name);
   }
-  // Ne montrer que si on a des donn  es de jeu dans ce tour
+  // Ne montrer que si on a des données de jeu dans ce tour
   const stats=loadStatsLocal();
   const available=playerList.filter(n=>stats[n]&&stats[n].totalDarts>0);
   if(!available.length){el.innerHTML='';return;}
 
-  let html=`<div class="wgs-title">     Stats de cette partie</div><div class="wgs-grid">`;
+  let html=`<div class="wgs-title">📈 Stats de cette partie</div><div class="wgs-grid">`;
   available.forEach(name=>{
     const p=stats[name];
-    // Flèchettes de cette game = dartsThisGame stock   dans gs
+    // Fléchettes de cette game = dartsThisGame stocké dans gs
     let dartsGame=0;
     if(gs.isTeam){
       gs.teams.forEach(t=>{if(t.members.includes(name))dartsGame+=t.dartsThisGame||0;});
@@ -2178,19 +1767,18 @@ function renderWinGameStats(){
     const avgClose=closes.length?Math.round(closes.reduce((a,b)=>a+b,0)/closes.length):null;
     html+=`<div class="wgs-card">
       <div class="wgs-name">${name}</div>
-      <div class="wgs-label">Flèchettes cette partie</div>
+      <div class="wgs-label">Fléchettes cette partie</div>
       <div class="wgs-val">${dartsGame}</div>
-      <div class="wgs-sub">Moy. clôture : ${avgClose!==null?avgClose+'F':'   '}    ${avgPD}pts/F</div>
+      <div class="wgs-sub">Moy. clôture : ${avgClose!==null?avgClose+'F':'—'} · ${avgPD}pts/F</div>
     </div>`;
   });
   html+=`</div>`;
   el.innerHTML=html;
 }
 
-// Construit le tableau de classement (podium, scores, statuts)
 function renderWinTable(){
   document.getElementById('winHead').innerHTML=gs.isTeam
-    ?'<th>  quipe</th><th>Joueurs</th><th>Manches</th><th>Rang</th><th>Score</th>'
+    ?'<th>Équipe</th><th>Joueurs</th><th>Manches</th><th>Rang</th><th>Score</th>'
     :'<th>Joueur</th><th>Manches</th><th>Rang</th><th>Score</th>';
   let sorted;
   if(gs.isTeam){
@@ -2205,18 +1793,16 @@ function renderWinTable(){
   const tb=document.getElementById('winBody');tb.innerHTML='';
   sorted.forEach((item,rank)=>{
     const tr=document.createElement('tr');if(rank===0)tr.className='winner-row';
-    const medal=rank===0?'    ':rank===1?'    ':rank===2?'    ':(rank+1)+'e';
-    const sd=item.score===0?'    Fini':item.score+' restant';
+    const medal=rank===0?'🥇':rank===1?'🥈':rank===2?'🥉':(rank+1)+'e';
+    const sd=item.score===0?'✓ Fini':item.score+' restant';
     if(gs.isTeam){
       const col=item.color||TCOLS[item._i];
-      tr.innerHTML=`<td style="color:${rank===0?'var(--accent)':col}">${rank===0?'     ':''}${item.name}</td><td style="font-size:10px;color:var(--muted)">${item.members.join(', ')}</td><td>${item.legs}</td><td>${medal}</td><td>${sd}</td>`;
-    } else tr.innerHTML=`<td>${rank===0?'     ':''}${item.name}</td><td>${item.legs}</td><td>${medal}</td><td>${sd}</td>`;
+      tr.innerHTML=`<td style="color:${rank===0?'var(--accent)':col}">${rank===0?'🎯 ':''}${item.name}</td><td style="font-size:10px;color:var(--muted)">${item.members.join(', ')}</td><td>${item.legs}</td><td>${medal}</td><td>${sd}</td>`;
+    } else tr.innerHTML=`<td>${rank===0?'🎯 ':''}${item.name}</td><td>${item.legs}</td><td>${medal}</td><td>${sd}</td>`;
     tb.appendChild(tr);
   });
 }
 
-// Continue la partie pour les joueurs qui n'ont pas encore clôtur  
-// Appel   depuis le bouton "Laisser les autres finir"
 function continueRound(){
   document.querySelector('.bottom-nav').style.display='';
   gs.throws=[];gs.mult=1;
@@ -2235,10 +1821,8 @@ function continueRound(){
   renderGame();
 }
 
-// Rejoue avec les mêmes joueurs, remet les scores    z  ro
 function replayGame(){
   clearGameState();
-  if(gs) gs.statsRecorded = new Set();
   document.getElementById('win-screen').style.display='none';
   document.querySelector('.bottom-nav').style.display='';
   if(gs.isTeam)gs.teams.forEach(t=>{t.score=gs.mode;t.finishRank=null;t.memberIdx=0;t.dartsThisGame=0;});
@@ -2249,29 +1833,23 @@ function replayGame(){
   renderGame();
 }
 
-// ======================================================
+// ══════════════════════════════════════════════════════
 // STATS PAGE
-// ======================================================
+// ══════════════════════════════════════════════════════
 let selectedStatPlayer=null;
 
-// ---------------------------------------------
-// PAGE STATISTIQUES
-// Charge et affiche les stats du joueur s  lectionn  
-// R  cup  re les donn  es depuis Firebase si synchronis  
-// ---------------------------------------------
-async function renderStats(){
-  const raw = await getAggregatedStats();
-  const stats = filterDeleted(raw);
+function renderStats(){
+  const stats=loadStatsLocal();
   const players=Object.keys(stats);
   const sel=document.getElementById('statPlayerSelect');
   sel.innerHTML='';
 
   if(!players.length){
-    document.getElementById('statsContent').innerHTML=`<div class="stat-empty"><div class="se-icon">    </div><p>Aucune statistique encore.</p><p style="margin-top:8px;font-size:12px;color:var(--muted)">Jouez une partie pour voir vos stats !</p></div>`;
+    document.getElementById('statsContent').innerHTML=`<div class="stat-empty"><div class="se-icon">📊</div><p>Aucune statistique encore.</p><p style="margin-top:8px;font-size:12px;color:var(--muted)">Jouez une partie pour voir vos stats !</p></div>`;
     return;
   }
 
-  // s  lecteur joueur
+  // sélecteur joueur
   players.forEach((p,i)=>{
     const pill=document.createElement('div');
     pill.className='sp-pill'+(selectedStatPlayer===p||(selectedStatPlayer===null&&i===0)?' active':'');
@@ -2292,9 +1870,9 @@ async function renderStats(){
   const avgPerDart=totalDarts?Math.round(realPoints/totalDarts*10)/10:0;
   const winRate=games?Math.round(wins/games*100):0;
 
-  // top numéros touch  s
+  // top numéros touchés
   const hits=p.numberHits||{};
-  // Calculer les points r  els de chaque cl   pour le tri
+  // Calculer les points réels de chaque clé pour le tri
   function hitPts(key){
     if(key==='bull')return 25;
     if(key==='dbull')return 50;
@@ -2311,9 +1889,9 @@ async function renderStats(){
   function hitColor(key){
     if(key.startsWith('T'))return'#e85447'; // rouge pour triple
     if(key.startsWith('D'))return'#4799e8'; // bleu pour double
-    if(key==='dbull')return'#f0c93a';       // dor   pour bull 50
+    if(key==='dbull')return'#f0c93a';       // doré pour bull 50
     if(key==='bull')return'#e8c547';        // jaune pour bull 25
-    return'var(--accent)';                  // dor   pour simple
+    return'var(--accent)';                  // doré pour simple
   }
   const hitEntries=Object.entries(hits)
     .filter(([k])=>k!=='miss')
@@ -2322,21 +1900,15 @@ async function renderStats(){
   const maxHit=hitEntries.length?hitEntries[0][1]:1;
 
   const isTeamStat = !!(p.members && p.members.length);
-  // Joueur solo = jamais de parties enregistr  es mais a des lancers
-  const isSoloPlayer = games===0 && totalDarts>0;
-  const lastAvg=p.lastGameDarts>0?Math.round(p.lastGameRealPts/p.lastGameDarts*10)/10:null;
-  const bestAvg=p.bestGameAvg||null;
   let html=`<div class="stat-grid">
-    ${!isSoloPlayer?`<div class="stat-card"><div class="sc-label">Parties jou  es</div><div class="sc-val">${games}</div><div class="sc-sub">${wins}V    ${games-wins-(p.nc||0)}D    ${p.nc||0}NC</div></div>`:''}
-    ${!isSoloPlayer?`<div class="stat-card"><div class="sc-label">Taux de victoire</div><div class="sc-val">${winRate}%</div><div class="sc-sub">sur ${games} partie${games>1?'s':''}</div></div>`:''}
-    <div class="stat-card"><div class="sc-label">Flèchettes / clôture</div><div class="sc-val">${avgClose!==null?avgClose:'   '}</div><div class="sc-sub">${closingDarts.length} clôture${closingDarts.length>1?'s':''}</div></div>
-    ${!isTeamStat?`<div class="stat-card"><div class="sc-label">Points / fl  chette</div><div class="sc-val">${avgPerDart}</div><div class="sc-sub">toutes parties</div></div>`:''}
-    ${!isTeamStat?`<div class="stat-card"><div class="sc-label">Derni  re partie</div><div class="sc-val">${lastAvg!==null?lastAvg:'   '}</div><div class="sc-sub">pts/fl  chette</div></div>`:''}
-    ${!isTeamStat?`<div class="stat-card"><div class="sc-label">     Meilleure partie</div><div class="sc-val" style="color:var(--accent)">${bestAvg!==null?bestAvg:'   '}</div><div class="sc-sub">pts/fl  chette</div></div>`:''}
-    ${!isTeamStat?`<div class="stat-card"><div class="sc-label">     Meilleure vol  e</div><div class="sc-val" style="color:var(--accent)">${p.bestTurn||'   '}</div><div class="sc-sub">points en un tour</div></div>`:''}`;
+    <div class="stat-card"><div class="sc-label">Parties jouées</div><div class="sc-val">${games}</div><div class="sc-sub">${wins}V · ${games-wins}D</div></div>
+    <div class="stat-card"><div class="sc-label">Taux de victoire</div><div class="sc-val">${winRate}%</div><div class="sc-sub">sur ${games} partie${games>1?'s':''}</div></div>
+    <div class="stat-card"><div class="sc-label">Fléchettes / clôture</div><div class="sc-val">${avgClose!==null?avgClose:'—'}</div><div class="sc-sub">${closingDarts.length} clôture${closingDarts.length>1?'s':''}</div></div>
+    ${!isTeamStat?`<div class="stat-card"><div class="sc-label">Points / fléchette</div><div class="sc-val">${avgPerDart}</div><div class="sc-sub">${totalDarts} lancer${totalDarts>1?'s':''}</div></div>`:''}
+    ${!isTeamStat?`<div class="stat-card full" style="border-color:rgba(240,201,58,.3)"><div class="sc-label">🏆 Meilleure volée</div><div class="sc-val" style="color:var(--accent)">${p.bestTurn||'—'}</div><div class="sc-sub">points en un tour</div></div>`:''}`;
 
   if(hitEntries.length){
-    html+=`<div class="stat-card full"><div class="sc-label">Top zones touch  es</div><div class="bar-chart">`;
+    html+=`<div class="stat-card full"><div class="sc-label">Top zones touchées</div><div class="bar-chart">`;
     hitEntries.forEach(([key,count])=>{
       const lbl=hitLabel(key);
       const col=hitColor(key);
@@ -2348,22 +1920,22 @@ async function renderStats(){
 
   html+=`</div>`;
 
-  // Rat  s
+  // Ratés
   const misses=hits['miss']||0;
   if(totalDarts>0){
     const missRate=Math.round(misses/totalDarts*100);
-    html+=`<div class="stat-section-label">Pr  cision</div><div class="stat-grid"><div class="stat-card full"><div class="sc-label">Taux de r  ussite</div><div class="sc-val">${100-missRate}%</div><div class="sc-sub">${misses} rat  ${misses>1?'s':''} sur ${totalDarts} lancer${totalDarts>1?'s':''}</div></div></div>`;
+    html+=`<div class="stat-section-label">Précision</div><div class="stat-grid"><div class="stat-card full"><div class="sc-label">Taux de réussite</div><div class="sc-val">${100-missRate}%</div><div class="sc-sub">${misses} raté${misses>1?'s':''} sur ${totalDarts} lancer${totalDarts>1?'s':''}</div></div></div>`;
   }
 
-  // -- Si c'est une   quipe : afficher les stats individuelles des membres --
+  // ── Si c'est une équipe : afficher les stats individuelles des membres ──
   const teamMembers = p.members;
   if(teamMembers && teamMembers.length){
-    html += `<div class="stat-section-label" style="margin-top:8px">     Stats individuelles des membres</div>`;
+    html += `<div class="stat-section-label" style="margin-top:8px">👥 Stats individuelles des membres</div>`;
     html += `<div class="stat-grid">`;
     teamMembers.forEach(memberName=>{
       const mp = stats[memberName];
       if(!mp){ 
-        html+=`<div class="stat-card"><div class="sc-label" style="color:var(--muted)">${memberName}</div><div class="sc-sub" style="margin-top:8px">Aucune donn  e</div></div>`;
+        html+=`<div class="stat-card"><div class="sc-label" style="color:var(--muted)">${memberName}</div><div class="sc-sub" style="margin-top:8px">Aucune donnée</div></div>`;
         return;
       }
       const mDarts = mp.totalDarts||0;
@@ -2375,14 +1947,14 @@ async function renderStats(){
       // top zone
       const mHits  = mp.numberHits||{};
       const mTopEntry = Object.entries(mHits).filter(([k])=>k!=='miss').sort((a,b)=>b[1]-a[1])[0];
-      const mTop = mTopEntry ? (mTopEntry[0]==='bull'?'B25':mTopEntry[0]==='dbull'?'B50':mTopEntry[0]) : '   ';
+      const mTop = mTopEntry ? (mTopEntry[0]==='bull'?'B25':mTopEntry[0]==='dbull'?'B50':mTopEntry[0]) : '—';
       html+=`<div class="stat-card">
-        <div class="sc-label" style="color:var(--accent);font-size:11px;margin-bottom:8px">    ${memberName}</div>
+        <div class="sc-label" style="color:var(--accent);font-size:11px;margin-bottom:8px">● ${memberName}</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
           <div><div class="sc-label">Pts/F</div><div style="font-family:var(--mono);font-size:18px;font-weight:500">${mAvg}</div></div>
-          <div><div class="sc-label">Pr  cision</div><div style="font-family:var(--mono);font-size:18px;font-weight:500">${mPrec}%</div></div>
+          <div><div class="sc-label">Précision</div><div style="font-family:var(--mono);font-size:18px;font-weight:500">${mPrec}%</div></div>
           <div><div class="sc-label">Top zone</div><div style="font-family:var(--mono);font-size:18px;font-weight:500">${mTop}</div></div>
-          <div><div class="sc-label">Meill. vol  e</div><div style="font-family:var(--mono);font-size:18px;font-weight:500">${mBest||'   '}</div></div>
+          <div><div class="sc-label">Meill. volée</div><div style="font-family:var(--mono);font-size:18px;font-weight:500">${mBest||'—'}</div></div>
         </div>
       </div>`;
     });
@@ -2392,12 +1964,12 @@ async function renderStats(){
   document.getElementById('statsContent').innerHTML=html;
 }
 
-// ======================================================
+// ══════════════════════════════════════════════════════
 // SERVICE WORKER
-// ======================================================
-// ======================================================
+// ══════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 // ANIMATION VICTOIRE (confettis)
-// ======================================================
+// ══════════════════════════════════════════════════════
 function launchConfetti(){
   const canvas=document.getElementById('confetti-canvas');
   const ctx=canvas.getContext('2d');
@@ -2448,7 +2020,7 @@ function launchConfetti(){
 
       p.x+=p.vx;
       p.y+=p.vy;
-      p.vy+=0.05; // gravit  
+      p.vy+=0.05; // gravité
       p.tiltAngle+=p.tiltSpeed;
       p.opacity=Math.max(0,1-(frame/MAX)*1.2);
     });
@@ -2459,13 +2031,12 @@ function launchConfetti(){
   draw();
 }
 
-// ======================================================
-// TH  ME CLAIR / SOMBRE
-// ======================================================
-// ======================================================
-// PLEIN   CRAN
-// ======================================================
-// Bascule entre mode plein écran et mode normal
+// ══════════════════════════════════════════════════════
+// THÈME CLAIR / SOMBRE
+// ══════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
+// PLEIN ÉCRAN
+// ══════════════════════════════════════════════════════
 function toggleFullscreen(){
   if(!document.fullscreenElement && !document.webkitFullscreenElement){
     // Entrer en plein écran
@@ -2479,55 +2050,46 @@ function toggleFullscreen(){
   }
 }
 
-// Met    jour l'ic  ne des boutons plein écran
 function updateFullscreenBtns(){
   const isFs=!!(document.fullscreenElement||document.webkitFullscreenElement);
-  const icon = isFs ? '   ' : '   ';
+  const icon = isFs ? '⛿' : '⛶';
   ['fullscreenBtn','fullscreenBtnSetup'].forEach(id=>{
     const el=document.getElementById(id);
     if(el) el.textContent=icon;
   });
 }
 
-//   couter les changements de plein écran (bouton retour, etc.)
+// Écouter les changements de plein écran (bouton retour, etc.)
 document.addEventListener('fullscreenchange', updateFullscreenBtns);
 document.addEventListener('webkitfullscreenchange', updateFullscreenBtns);
 
 function updateThemeBtns(isLight){
-  const icon=isLight?'    ':'      ';
+  const icon=isLight?'🌙':'☀️';
   ['themeBtn','themeBtnGame'].forEach(id=>{
     const el=document.getElementById(id);
     if(el) el.textContent=icon;
   });
   document.querySelector('meta[name="theme-color"]').content=isLight?'#f4f3ef':'#0a0a0c';
 }
-// Bascule entre mode sombre et mode lumineux
-// Sauvegarde le choix en localStorage
 function toggleTheme(){
   const isLight=document.body.classList.toggle('light');
   localStorage.setItem('fl_theme',isLight?'light':'dark');
   updateThemeBtns(isLight);
 }
-// Applique le th  me sauvegard   (sombre/lumineux) au d  marrage
 (function initTheme(){
   const saved=localStorage.getItem('fl_theme');
   if(saved==='light'){
     document.body.classList.add('light');
-    // Les boutons seront mis    jour apr  s le DOM ready
+    // Les boutons seront mis à jour après le DOM ready
     window.addEventListener('DOMContentLoaded',()=>updateThemeBtns(true));
-    // Fallback imm  diat
+    // Fallback immédiat
     setTimeout(()=>updateThemeBtns(true),0);
   }
 })();
 
-// ======================================================
+// ══════════════════════════════════════════════════════
 // PERSISTANCE DE LA PARTIE EN COURS
-// ======================================================
-// ---------------------------------------------
-// PERSISTANCE DE LA PARTIE EN COURS
-// Sauvegarde l'état du jeu en localStorage
-// pour pouvoir reprendre si l'app est ferm  e
-// ---------------------------------------------
+// ══════════════════════════════════════════════════════
 function saveGameState(){
   if(!gameActive||!gs||!gs.players&&!gs.teams)return;
   try{
@@ -2569,25 +2131,26 @@ function restoreGameState(){
   }catch(e){return false;}
 }
 
-// -- Init sync au d  marrage --
+// ── Init sync au démarrage ──
 (async function initSync(){
   const savedCode = localStorage.getItem('fl_sync_code');
   if(savedCode){
     if(initFirebase()){
       syncGroupId = 'g_' + savedCode;
       syncEnabled = true;
-      // Fusionner local + cloud dans les deux sens
-      await pushLocalStatsToCloud();
+      try {
+        const snap = await db.collection('fl_groups').doc(syncGroupId).get();
+        if(snap.exists) saveStatsLocal(snap.data().stats||{});
+      } catch(e){}
       updateSyncBadge();
     }
   }
 })();
 
-// Restaurer la partie en cours si l'app a   t   ferm  e pendant une partie
-// Restaure la partie en cours si l'app a   t   ferm  e pendant une partie
+// Restaurer la partie en cours si l'app a été fermée pendant une partie
 (function initRestoreGame(){
   if(restoreGameState()){
-    // Partie sauvegard  e trouv  e -> montrer le bouton reprendre
+    // Partie sauvegardée trouvée → montrer le bouton reprendre
     setTimeout(()=>{
       showResumeBar();
       updateResumeBar();
