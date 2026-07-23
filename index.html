@@ -11,788 +11,7 @@
 <link rel="manifest" href="manifest.json">
 <!-- Firebase SDK (compat) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js">
-// ── MODE CRICKET ──
-var CRICKET_ZONES=[20,19,18,17,16,15,25];
-
-function updateGameMode(){
-  var isCricket=cfg.mode==='cricket';
-  var fs=document.getElementById('finModes');
-  if(fs&&fs.closest('.setup-section'))fs.closest('.setup-section').style.display=isCricket?'none':'';
-  if(isCricket)cfg.fin='simple';
-}
-
-function initCricketState(){
-  var CZ=CRICKET_ZONES;
-  function ic(){var o={};CZ.forEach(function(z){o[z]=0;});return o;}
-  if(gs.isTeam)gs.teams.forEach(function(t){t.cricket=ic();});
-  else gs.players.forEach(function(p){p.cricket=ic();});
-  gs.isCricket=true;
-}
-
-function renderCricket(){
-  var players=gs.isTeam?gs.teams:gs.players;
-  var cur=gs.isTeam?gs.curTeam:gs.cur;
-  var cols=players.length;
-  var gc='60px repeat('+cols+',1fr)';
-  var html='<div class="cricket-board">';
-  html+='<div style="display:grid;grid-template-columns:'+gc+';gap:8px;padding:4px 12px"><div></div>';
-  players.forEach(function(p,i){
-    html+='<div class="cricket-player'+(i===cur?' active-col':'')+'">'+p.name+'</div>';
-  });
-  html+='</div>';
-  CRICKET_ZONES.forEach(function(zone){
-    html+='<div class="cricket-row" style="display:grid;grid-template-columns:'+gc+';gap:8px">';
-    html+='<div class="cricket-zone">'+(zone===25?'Bull':zone)+'</div>';
-    players.forEach(function(p){
-      var hits=p.cricket[zone]||0;
-      if(hits>=3){html+='<div class="cricket-done">✓</div>';}
-      else{html+='<div class="cricket-marks">';for(var m=1;m<=3;m++)html+='<div class="cricket-mark'+(hits>=m?' hit':'')+'"></div>';html+='</div>';}
-    });
-    html+='</div>';
-  });
-  html+='<div style="padding:8px 12px;font-family:var(--mono);font-size:12px;color:var(--muted);text-align:center">';
-  html+=gs.throws.length>0?gs.throws.map(function(t){return t.label;}).join(' · '):'Tour de <span style="color:var(--accent)">'+players[cur].name+'</span>';
-  html+='</div></div>';
-  document.getElementById('scoreboard').innerHTML=html;
-  document.getElementById('checkoutBox').style.display='none';
-  var tl=document.querySelector('.throw-log');if(tl)tl.style.display='none';
-  var nb=document.querySelector('.numpad');if(nb)nb.style.display='none';
-  buildCricketNumpad();
-}
-
-function buildCricketNumpad(){
-  var np=document.getElementById('cricket-numpad');
-  if(!np){np=document.createElement('div');np.id='cricket-numpad';np.className='cricket-numpad';document.getElementById('game-page').appendChild(np);}
-  np.style.display='grid';
-  var m=gs.mult||1;
-  np.innerHTML=
-    '<button class="cnb'+(m===1?' mult-active':'')+'" onclick="setCricketMult(1)">S</button>'+
-    '<button class="cnb'+(m===2?' mult-active':'')+'" onclick="setCricketMult(2)">D</button>'+
-    '<button class="cnb'+(m===3?' mult-active':'')+'" onclick="setCricketMult(3)">T</button>'+
-    '<button class="cnb" style="color:var(--muted);font-size:13px" onclick="addThrowCricket(0)">Raté</button>'+
-    [20,19,18,17,16,15].map(function(v){return '<button class="cnb" onclick="addThrowCricket('+v+')">'+v+'</button>';}).join('')+
-    '<button class="cnb bull" onclick="addThrowCricket(25)">Bull</button>';
-}
-
-function setCricketMult(m){gs.mult=m;buildCricketNumpad();}
-
-function addThrowCricket(val){
-  var players=gs.isTeam?gs.teams:gs.players;
-  var cur=gs.isTeam?gs.curTeam:gs.cur;
-  var p=players[cur];
-  var mult=gs.mult||1;
-  var label='';
-  if(val===0){label='Raté';}
-  else if(val===25){label=(mult===2?'D':mult===3?'T':'')+'Bull';}
-  else{label=(mult===1?'S':mult===2?'D':'T')+val;}
-  gs.throws.push({label:label,pts:0});
-  recordThrowStat(p.name,label,0);
-  if(gs.isTeam)gs.teams[cur].dartsThisGame=(gs.teams[cur].dartsThisGame||0)+1;
-  else gs.players[cur].dartsThisGame=(gs.players[cur].dartsThisGame||0)+1;
-  if(val!==0&&CRICKET_ZONES.indexOf(val)>=0&&p.cricket[val]<3){
-    p.cricket[val]=Math.min(3,(p.cricket[val]||0)+mult);
-  }
-  gs.mult=1;
-  var won=CRICKET_ZONES.every(function(z){return p.cricket[z]>=3;});
-  if(won){
-    gs.finishOrder.push(cur);
-    recordGameStat(p.name,true,p.dartsThisGame||0);
-    renderCricket();
-    setTimeout(handleRoundEnd,120);
-    return;
-  }
-  renderCricket();
-  if(gs.throws.length>=3)setTimeout(function(){nextTurn();},300);
-}
-
-function cleanupCricket(){
-  var np=document.getElementById('cricket-numpad');if(np)np.remove();
-  var tl=document.querySelector('.throw-log');if(tl)tl.style.display='';
-  var nb=document.querySelector('.numpad');if(nb)nb.style.display='';
-  var cb=document.getElementById('checkoutBox');if(cb)cb.style.display='';
-}
-
-</script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-<title>🎯 Fléchettes</title>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap');
-
-:root{
-  --bg:#0a0a0c;
-  --surface:#141418;
-  --surface2:#1c1c22;
-  --surface3:#24242c;
-  --border:#2a2a35;
-  --border2:#343442;
-  --accent:#f0c93a;
-  --accent2:#c9a420;
-  --accent-glow:rgba(240,201,58,.18);
-  --red:#e85447;--green:#3ecf7a;--blue:#4799e8;
-  --text:#f2efe9;--muted:#666;--muted2:#444;
-  --mono:'DM Mono',monospace;--sans:'DM Sans',sans-serif;
-  --r:14px;--r-sm:10px;--r-lg:18px;
-}
-/* ── MODE LUMINEUX ── */
-body.light{
-  --bg:#f4f3ef;
-  --surface:#ffffff;
-  --surface2:#eceae4;
-  --surface3:#e2e0d8;
-  --border:#d0cdc4;
-  --border2:#bbb9b0;
-  --accent:#c9920a;
-  --accent2:#a07508;
-  --accent-glow:rgba(201,146,10,.15);
-  --text:#1a1814;
-  --muted:#888;
-  --muted2:#aaa;
-}
-body.light .bottom-nav{background:rgba(244,243,239,.92)}
-body.light #win-screen{background:#f4f3ef}
-body.light .suggestions{border-color:var(--accent)}
-body.light .confetti-canvas{} 
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100dvh;overflow-x:hidden;overflow-y:auto;user-select:none}
-
-/* ── NAV ── */
-.bottom-nav{
-  position:fixed;bottom:0;left:0;right:0;
-  background:rgba(14,14,18,.92);
-  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-  border-top:1px solid var(--border);
-  display:flex;z-index:50;
-  padding-bottom:env(safe-area-inset-bottom);
-  min-height:68px;
-}
-.nav-btn{
-  flex:1;padding:6px 4px 6px;
-  display:flex;flex-direction:column;align-items:center;gap:2px;
-  cursor:pointer;border:none;background:none;
-  color:var(--muted);font-family:var(--sans);font-size:9px;font-weight:600;
-  letter-spacing:.3px;text-transform:uppercase;
-  transition:color .2s;position:relative;
-}
-.nav-btn.active{color:var(--accent)}
-.nav-btn.active::after{
-  content:'';position:absolute;bottom:-1px;left:25%;right:25%;
-  height:2px;background:var(--accent);border-radius:2px 2px 0 0;
-}
-.nav-btn .ni{font-size:22px;line-height:1;display:flex;align-items:center;justify-content:center;height:44px}
-/* SVG dart icon */
-.dart-icon{width:44px;height:44px}
-
-/* ── PAGES ── */
-.page{display:none;padding-bottom:180px}
-#setup-page{min-height:100dvh}
-#stats-page{min-height:100dvh}
-.page.active{display:block}
-
-/* ── SETUP HERO ── */
-.setup-hero{
-  text-align:center;padding:44px 0 28px;position:relative;overflow:hidden;
-}
-.hero-dart-wrap{font-size:80px;line-height:1;text-align:center;display:block;margin:0 auto 18px;animation:float 3s ease-in-out infinite}
-@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-.hero-glow{
-  position:absolute;top:-40px;left:50%;transform:translateX(-50%);
-  width:320px;height:320px;
-  background:radial-gradient(circle,var(--accent-glow) 0%,transparent 65%);
-  pointer-events:none;animation:pulse-glow 4s ease-in-out infinite;
-}
-@keyframes pulse-glow{0%,100%{opacity:.6;transform:translateX(-50%) scale(1)}50%{opacity:1;transform:translateX(-50%) scale(1.1)}}
-.hero-dart{width:72px;height:72px;margin:0 auto 14px;filter:drop-shadow(0 0 20px var(--accent-glow))}
-.setup-hero h1{
-  font-family:var(--mono);font-size:30px;font-weight:500;
-  color:var(--accent);letter-spacing:-1px;
-}
-.setup-hero p{font-size:10px;color:var(--muted);margin-top:5px;letter-spacing:2px;text-transform:uppercase}
-
-.px{padding:0 18px}
-.section-label{
-  font-size:9px;font-weight:700;color:var(--muted);
-  text-transform:uppercase;letter-spacing:1.8px;margin-bottom:10px;
-}
-.setup-section{margin-bottom:20px}
-
-/* Pills */
-.pill-group{display:flex;gap:6px;flex-wrap:wrap}
-.pill{
-  flex:1;padding:11px 6px;
-  border:1px solid var(--border2);border-radius:var(--r-sm);
-  background:var(--surface);color:var(--muted);
-  font-family:var(--mono);font-size:13px;font-weight:500;
-  cursor:pointer;text-align:center;
-  transition:all .15s;min-width:44px;
-}
-.pill:active{transform:scale(.96)}
-.pill.active{
-  background:var(--accent);border-color:var(--accent);color:#0a0a0c;
-  box-shadow:0 0 16px rgba(240,201,58,.25);
-}
-
-/* Name inputs */
-.names-wrap{display:flex;flex-direction:column;gap:8px}
-.team-block{
-  border:1px solid var(--border);border-radius:var(--r);
-  overflow:visible;background:var(--surface);
-}
-.team-header{
-  display:flex;align-items:center;gap:10px;
-  padding:10px 14px;background:var(--surface2);
-  border-radius:var(--r) var(--r) 0 0;
-}
-.team-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;box-shadow:0 0 6px currentColor}
-.team-lbl{font-family:var(--mono);font-size:12px;font-weight:500}
-.team-name-input::placeholder{color:var(--muted);font-weight:400}
-
-/* autocomplete */
-.input-wrap{position:relative;flex:1;min-width:0}
-.suggestions{
-  /* la bordure reste toujours visible */
-  border:1px solid var(--accent);border-radius:var(--r-sm);
-  overflow:hidden; /* clip le contenu interne */
-  max-height:200px;
-  box-shadow:0 8px 24px rgba(0,0,0,.8);
-  position:relative;
-}
-.suggestions-inner{
-  overflow-y:auto;overflow-x:hidden;
-  -webkit-overflow-scrolling:touch;
-  max-height:200px;
-  background:var(--surface2);
-  border-radius:var(--r-sm);
-  scroll-behavior:smooth;
-  -webkit-mask-image:linear-gradient(to bottom, transparent 0px, black 40px);
-  mask-image:linear-gradient(to bottom, transparent 0px, black 40px);
-}
-.suggestions-inner.at-top{
-  -webkit-mask-image:none;
-  mask-image:none;
-}
-.sug-item{
-  padding:11px 14px;font-size:14px;color:var(--text);cursor:pointer;
-  display:flex;align-items:center;justify-content:space-between;
-  border-bottom:1px solid var(--border);
-}
-.sug-item:last-child{border-bottom:none}
-.sug-item:active,.sug-item:hover{background:var(--surface3)}
-.sug-item .sug-name{flex:1}
-.sug-item .sug-del{font-size:18px;color:var(--muted);padding:0 4px;line-height:1}
-.sug-team-item{
-  padding:10px 14px;font-family:var(--mono);font-size:12px;
-  cursor:pointer;border-bottom:1px solid var(--border);
-  display:flex;align-items:center;justify-content:space-between;
-}
-.sug-team-item:last-child{border-bottom:none}
-.sug-team-item:active{background:var(--surface3)}
-
-.prow-solo{
-  display:flex;align-items:center;gap:10px;padding:0;
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--r);overflow:visible;cursor:text;
-}
-.prow-team{
-  display:flex;align-items:center;gap:10px;padding:0;
-  border-top:1px solid var(--border);overflow:visible;cursor:text;
-}
-.pnum{font-family:var(--mono);font-size:11px;color:var(--muted2);width:16px;flex-shrink:0;padding-left:14px}
-.prow-solo input,.prow-team input{
-  flex:1;background:transparent;border:none;
-  color:var(--text);font-family:var(--sans);font-size:14px;outline:none;
-  padding:13px 14px 13px 0;cursor:text;
-  /* zone de clic étendue à tout le rectangle */
-  min-height:48px;width:100%;
-}
-.prow-solo input::placeholder,.prow-team input::placeholder{color:var(--muted)}
-
-/* Start button */
-.start-btn{
-  width:100%;padding:16px;
-  background:linear-gradient(135deg,#3ecf7a 0%,#27a85a 100%);
-  color:#0a0a0c;border:none;border-radius:var(--r);
-  font-family:var(--mono);font-size:15px;font-weight:700;
-  cursor:pointer;letter-spacing:.8px;
-  box-shadow:0 4px 24px rgba(62,207,122,.35);
-  transition:transform .12s,box-shadow .12s;margin-top:16px;
-}
-.start-btn:active{transform:scale(.97);box-shadow:0 2px 12px rgba(240,201,58,.2)}
-
-/* ── GAME ── */
-#game-page{min-height:100dvh;flex-direction:column;padding-bottom:80px;overflow-y:auto;display:none}
-.top-bar{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 0;flex-shrink:0}
-.back-btn{
-  font-size:18px;cursor:pointer;color:var(--muted);
-  background:var(--surface2);border:1px solid var(--border);
-  border-radius:8px;padding:6px 10px;transition:all .15s;
-}
-.back-btn:active{background:var(--surface3)}
-.game-badge{
-  font-family:var(--mono);font-size:10px;color:var(--accent);
-  background:var(--accent-glow);padding:5px 12px;
-  border-radius:20px;border:1px solid rgba(240,201,58,.25);
-  letter-spacing:.3px;
-}
-
-/* Scoreboard */
-.scoreboard{display:flex;gap:8px;padding:12px 16px 8px;overflow-x:auto;scrollbar-width:none;flex-shrink:0}
-.scoreboard::-webkit-scrollbar{display:none}
-
-.team-card{
-  flex:1;min-width:72px;
-  background:var(--surface);border:1.5px solid var(--border);
-  border-radius:var(--r);padding:10px 7px;
-  text-align:center;transition:all .25s;
-  position:relative;overflow:hidden;
-}
-.team-card.active{box-shadow:0 0 20px -4px currentColor}
-.team-card.finished{opacity:.45}
-.tc-bar{position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--r) var(--r) 0 0}
-.tc-name{font-size:10px;color:var(--muted);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
-.tc-score{font-family:var(--mono);font-size:22px;font-weight:500;color:var(--text);line-height:1}
-.team-card.finished .tc-score{font-size:16px;color:var(--green)}
-.tc-legs{font-size:9px;color:var(--muted);margin-top:3px;font-family:var(--mono)}
-.tc-members{font-size:9px;color:var(--muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-
-.player-card{
-  flex:1;min-width:62px;max-width:120px;
-  background:var(--surface);border:1.5px solid var(--border);
-  border-radius:var(--r);padding:10px 7px;
-  text-align:center;transition:all .25s;position:relative;overflow:hidden;
-}
-.player-card.active{border-color:var(--accent);background:rgba(240,201,58,.05);box-shadow:0 0 18px -4px var(--accent-glow)}
-.player-card.active::before{content:'';position:absolute;top:0;left:0;right:0;height:2.5px;background:var(--accent)}
-.player-card.finished{opacity:.45}
-.player-card.finished .pc-score{color:var(--green);font-size:16px}
-.pc-name{font-size:10px;color:var(--muted);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
-.player-card.active .pc-name{color:var(--accent)}
-.pc-score{font-family:var(--mono);font-size:22px;font-weight:500;color:var(--text);line-height:1}
-.pc-live{font-family:var(--mono);font-size:15px;font-weight:600;color:#3ecf7a;line-height:1;margin-top:3px;min-height:18px}
-.tc-live{font-family:var(--mono);font-size:13px;font-weight:600;color:#3ecf7a;line-height:1;margin-top:2px;min-height:16px}
-.pc-legs{font-size:9px;color:var(--muted);margin-top:3px;font-family:var(--mono)}
-
-/* Checkout */
-.checkout-box{
-  margin:0 16px 8px;
-  background:linear-gradient(135deg,rgba(71,153,232,.07),rgba(71,153,232,.04));
-  border:1px solid rgba(71,153,232,.2);border-radius:var(--r);
-  padding:10px 14px;display:none;flex-shrink:0;
-}
-.co-label{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:var(--blue);margin-bottom:6px;font-weight:700}
-.checkout-hints{display:flex;flex-wrap:wrap;gap:5px}
-.co-hint{
-  background:rgba(71,153,232,.1);border:1px solid rgba(71,153,232,.25);
-  border-radius:20px;padding:4px 10px;
-  font-family:var(--mono);font-size:12px;color:#7ab8f5;
-}
-
-/* Turn row */
-.turn-row{display:flex;align-items:center;justify-content:space-between;padding:0 16px 6px;flex-shrink:0}
-.turn-name{font-size:13px;font-weight:600;color:var(--text)}
-.dart-dots{display:flex;gap:6px}
-.dot{
-  width:10px;height:10px;border-radius:50%;
-  background:var(--surface3);border:1px solid var(--border2);
-  transition:all .2s;
-}
-.dot.thrown{background:var(--accent);border-color:var(--accent);box-shadow:0 0 8px var(--accent-glow)}
-
-/* Throw log */
-.throw-log{display:flex;gap:5px;align-items:center;padding:0 16px 6px;min-height:30px;flex-wrap:wrap;flex-shrink:0}
-.throw-tag{
-  background:var(--surface2);border:1px solid var(--border2);
-  border-radius:20px;padding:3px 10px;
-  font-family:var(--mono);font-size:12px;color:var(--text);
-}
-.throw-total{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--accent);margin-left:auto}
-
-/* Flash */
-.flash-msg{
-  margin:0 16px 6px;padding:8px 14px;border-radius:var(--r-sm);
-  font-size:13px;text-align:center;display:none;
-  font-family:var(--mono);flex-shrink:0;font-weight:500;
-}
-.flash-msg.ok{background:rgba(62,207,122,.1);border:1px solid rgba(62,207,122,.3);color:var(--green)}
-.flash-msg.err{background:rgba(232,84,71,.1);border:1px solid rgba(232,84,71,.3);color:var(--red)}
-
-/* Keypad */
-.keypad{padding:0 16px 8px;display:flex;flex-direction:column;gap:8px}
-.mult-row{display:flex;gap:6px;flex-shrink:0}
-.mult-btn{
-  flex:1;padding:9px 4px;
-  background:var(--surface);border:1px solid var(--border2);
-  border-radius:var(--r-sm);
-  font-family:var(--mono);font-size:12px;font-weight:500;color:var(--muted);
-  cursor:pointer;text-align:center;transition:all .15s;
-}
-.mult-btn.active{
-  background:rgba(240,201,58,.12);border-color:rgba(240,201,58,.4);
-  color:var(--accent);
-}
-.grid{display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(5,48px);gap:5px}
-.num-btn{
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--r-sm);
-  font-family:var(--mono);font-size:14px;font-weight:500;color:var(--text);
-  cursor:pointer;display:flex;align-items:center;justify-content:center;
-  height:48px;transition:transform .08s,background .1s,border-color .1s;
-}
-.num-btn:active{transform:scale(.90);background:var(--surface3)}
-.num-btn.bull{border-color:rgba(240,201,58,.25);color:var(--accent)}
-.num-btn.dbull{
-  background:rgba(240,201,58,.07);border-color:rgba(240,201,58,.35);
-  color:var(--accent);font-size:11px;
-}
-.num-btn.miss{color:var(--muted2)}
-
-/* Actions */
-.bottom-actions{display:flex;gap:8px;flex-shrink:0}
-.undo-btn{
-  padding:13px 16px;
-  background:var(--surface);border:1px solid var(--border2);
-  border-radius:var(--r);color:var(--muted);font-size:18px;cursor:pointer;
-  transition:all .15s;
-}
-.undo-btn:active{background:var(--surface3)}
-.validate-btn{
-  flex:1;padding:13px;
-  background:linear-gradient(135deg,var(--accent) 0%,#d4a820 100%);
-  border:none;border-radius:var(--r);
-  font-family:var(--mono);font-size:14px;font-weight:700;color:#0a0a0c;
-  cursor:pointer;box-shadow:0 4px 16px rgba(240,201,58,.25);
-  transition:all .15s;
-}
-.validate-btn:disabled{
-  background:var(--surface);border:1px solid var(--border);
-  color:var(--muted);cursor:default;box-shadow:none;
-}
-.validate-btn:not(:disabled):active{transform:scale(.98);box-shadow:0 2px 8px rgba(240,201,58,.15)}
-
-/* ── WIN SCREEN ── */
-#win-screen{
-  display:none;flex-direction:column;align-items:center;
-  min-height:100dvh;padding:40px 20px 120px;text-align:center;
-  background:#0a0a0c;
-  position:fixed;inset:0;z-index:41;
-  overflow-y:auto;
-  -webkit-overflow-scrolling:touch;
-  justify-content:flex-start;
-}
-#win-screen .trophy{font-size:72px;margin-bottom:18px;animation:pop .5s cubic-bezier(.175,.885,.32,1.275)}
-@keyframes pop{from{transform:scale(0) rotate(-10deg);opacity:0}to{transform:scale(1) rotate(0);opacity:1}}
-#win-screen h2{font-family:var(--mono);font-size:22px;color:var(--accent);margin-bottom:5px;letter-spacing:-.5px}
-#win-screen .win-sub{font-size:11px;color:var(--muted);margin-bottom:22px;text-transform:uppercase;letter-spacing:1.2px}
-.results-table{
-  width:100%;max-width:400px;
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--r);overflow:hidden;margin-bottom:16px;
-}
-.results-table th{padding:9px 10px;font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);background:var(--surface2);font-weight:700;text-align:left}
-.results-table td{padding:10px 10px;font-family:var(--mono);font-size:12px;border-top:1px solid var(--border)}
-.winner-row td{color:var(--accent)}
-.continue-btn{
-  width:100%;max-width:400px;padding:13px;margin-bottom:10px;
-  background:rgba(62,207,122,.08);border:1px solid rgba(62,207,122,.3);
-  border-radius:var(--r);font-family:var(--mono);font-size:13px;font-weight:600;
-  color:var(--green);cursor:pointer;transition:all .15s;
-}
-.continue-btn:active{background:rgba(62,207,122,.14)}
-.win-btns{display:flex;gap:8px;width:100%;max-width:400px}
-.replay-btn{
-  flex:1;padding:13px;
-  background:linear-gradient(135deg,var(--accent) 0%,#d4a820 100%);
-  border:none;border-radius:var(--r);
-  font-family:var(--mono);font-size:13px;font-weight:700;color:#0a0a0c;
-  cursor:pointer;box-shadow:0 4px 16px rgba(240,201,58,.25);
-}
-.new-btn{
-  padding:13px 16px;
-  background:var(--surface);border:1px solid var(--border2);
-  border-radius:var(--r);font-family:var(--mono);font-size:13px;color:var(--muted);cursor:pointer;
-}
-
-/* ── SYNC ── */
-#sync-screen{display:none;position:fixed;inset:0;background:#0a0a0c;z-index:60;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center}
-#sync-screen.show{display:flex}
-.sync-icon{font-size:48px;margin-bottom:16px}
-.sync-title{font-family:var(--mono);font-size:22px;color:var(--accent);margin-bottom:8px}
-.sync-sub{font-size:13px;color:var(--muted);margin-bottom:32px;line-height:1.7}
-.sync-input-wrap{display:flex;flex-direction:column;gap:12px;width:100%;max-width:280px;margin-bottom:20px}
-.sync-input{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);padding:14px;color:var(--text);font-family:var(--mono);font-size:22px;text-align:center;outline:none;letter-spacing:10px;width:100%}
-.sync-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
-.sync-input::placeholder{letter-spacing:2px;font-size:14px;color:var(--muted)}
-.sync-btn{width:100%;max-width:280px;padding:14px;background:linear-gradient(135deg,var(--accent),#d4a820);border:none;border-radius:var(--r);font-family:var(--mono);font-size:15px;font-weight:700;color:#0a0a0c;cursor:pointer;margin-bottom:12px;box-shadow:0 4px 20px rgba(240,201,58,.25)}
-.sync-skip{font-size:12px;color:var(--muted);cursor:pointer;text-decoration:underline}
-.sync-field-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;text-align:left;width:100%;max-width:280px;margin-bottom:4px}
-.sync-status{font-family:var(--mono);font-size:12px;margin-top:8px;min-height:18px}
-.sync-status.ok{color:var(--green)}
-.sync-status.err{color:var(--red)}
-.sync-badge{display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-family:var(--mono);font-size:10px;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--muted);transition:all .15s}
-.sync-badge.connected{border-color:rgba(62,207,122,.4);color:var(--green);background:rgba(62,207,122,.07)}
-.sync-badge .sb-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
-
-/* ── WIN GAME STATS ── */
-.wgs-title{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;text-align:left}
-.wgs-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
-.wgs-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 12px}
-.wgs-card.full{grid-column:1/-1}
-.wgs-name{font-size:11px;color:var(--accent);margin-bottom:4px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.wgs-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px}
-.wgs-val{font-family:var(--mono);font-size:16px;font-weight:500;color:var(--text);margin-top:2px}
-.wgs-sub{font-size:10px;color:var(--muted);margin-top:2px}
-
-/* ── STATS ── */
-#stats-page{overflow-y:auto}
-.stats-header{padding:22px 20px 14px;display:flex;align-items:center;justify-content:space-between}
-.stats-header h2{font-family:var(--mono);font-size:20px;color:var(--accent);letter-spacing:-.5px}
-.clear-btn{font-size:11px;color:var(--muted);background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:6px 12px;cursor:pointer;font-family:var(--mono)}
-.stat-player-select{padding:0 20px 16px;display:flex;gap:7px;overflow-x:auto;scrollbar-width:none}
-.stat-player-select::-webkit-scrollbar{display:none}
-.sp-pill{padding:7px 16px;border:2px solid transparent;border-radius:20px;background:var(--surface);color:var(--muted);font-family:var(--mono);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:background .15s,color .15s,border-color .15s;outline:1px solid var(--border2);outline-offset:-1px}
-.sp-pill.active{background:var(--accent);border-color:var(--accent);color:#0a0a0c;outline:none}
-.stat-empty{text-align:center;padding:70px 20px;color:var(--muted);font-size:14px}
-.stat-empty .se-icon{font-size:44px;margin-bottom:14px;opacity:.5}
-
-/* stat cards */
-.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 18px 16px}
-.stat-card{
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--r);padding:14px;
-  transition:border-color .2s;
-}
-.stat-card.full{grid-column:1/-1}
-.sc-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px;font-weight:700}
-.sc-val{font-family:var(--mono);font-size:26px;font-weight:500;color:var(--text)}
-.sc-sub{font-size:11px;color:var(--muted);margin-top:4px}
-
-/* bar chart */
-.bar-chart{padding:4px 0}
-.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
-.bar-lbl{font-family:var(--mono);font-size:11px;color:var(--muted);width:28px;text-align:right;flex-shrink:0}
-.bar-track{flex:1;height:14px;background:var(--surface2);border-radius:4px;overflow:hidden}
-.bar-fill{height:100%;border-radius:4px;background:var(--accent);transition:width .4s}
-.bar-count{font-family:var(--mono);font-size:10px;color:var(--muted);width:28px;flex-shrink:0}
-
-/* history list */
-.history-list{padding:0 20px 16px;display:flex;flex-direction:column;gap:8px}
-.hist-item{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px}
-.hist-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
-.hist-mode{font-family:var(--mono);font-size:11px;color:var(--accent)}
-.hist-date{font-size:10px;color:var(--muted)}
-.hist-score{font-family:var(--mono);font-size:13px;color:var(--text)}
-.hist-score span{color:var(--muted);font-size:11px}
-.stat-section-label{padding:0 20px 8px;font-size:10px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px}
-.cricket-board{padding:8px 16px;display:flex;flex-direction:column;gap:6px}
-.cricket-row{display:grid;align-items:center;background:var(--surface);border-radius:10px;padding:8px 12px;gap:8px}
-.cricket-zone{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--accent);text-align:center}
-.cricket-marks{display:flex;gap:4px;align-items:center;justify-content:center}
-.cricket-mark{width:18px;height:18px;border-radius:50%;border:2px solid var(--border2);transition:all .2s}
-.cricket-mark.hit{border-color:var(--accent);background:var(--accent)}
-.cricket-done{color:var(--green);font-size:16px;text-align:center}
-.cricket-player{font-family:var(--mono);font-size:11px;font-weight:600;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.cricket-player.active-col{color:var(--accent)}
-.cricket-numpad{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px 16px}
-.cricket-numpad .cnb{border-radius:12px;padding:14px 0;font-family:var(--mono);font-size:18px;font-weight:700;background:var(--surface);border:1px solid var(--border);color:var(--text);cursor:pointer;text-align:center;transition:background .1s}
-.cricket-numpad .cnb.bull{color:var(--accent)}
-.cricket-numpad .cnb.mult-active{background:var(--accent);color:#0a0a0c}
-</style>
-</head>
-<body>
-
-<!-- ══════════════ SETUP PAGE ══════════════ -->
-<div class="page active" id="setup-page">
-  <!-- Barre "Reprendre la partie" -->
-  <div id="resume-bar" style="display:none;align-items:center;justify-content:space-between;gap:10px;margin:12px 20px 0;padding:12px 16px;background:rgba(62,207,122,.1);border:1px solid rgba(62,207,122,.3);border-radius:14px">
-    <div>
-      <div style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--green)">Partie en cours</div>
-      <div style="font-size:11px;color:var(--muted);margin-top:2px">Tu as quitté sans terminer</div>
-    </div>
-    <div style="display:flex;gap:8px">
-      <button onclick="resumeGame()" style="padding:9px 16px;background:var(--green);border:none;border-radius:10px;font-family:var(--mono);font-size:13px;font-weight:700;color:#0a0a0c;cursor:pointer">▶ Reprendre</button>
-      <button onclick="backToSetup(true)" style="padding:9px 12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;font-family:var(--mono);font-size:12px;color:var(--muted);cursor:pointer">Abandon</button>
-    </div>
-  </div>
-  <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 20px 0">
-    <div style="display:flex;gap:6px">
-      <button id="fullscreenBtnSetup" onclick="toggleFullscreen()" style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:18px;cursor:pointer;line-height:1" title="Plein écran">⛶</button>
-      <button id="themeBtn" onclick="toggleTheme()" style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:18px;cursor:pointer;line-height:1">☀️</button>
-    </div>
-    <div class="sync-badge" id="syncBadge" onclick="openSyncScreen()">
-      <span class="sb-dot"></span><span id="syncBadgeLabel">Non synchronisé</span>
-    </div>
-  </div>
-  <div class="setup-hero">
-    <div class="hero-glow"></div>
-    <div class="hero-dart-wrap">🎯</div>
-    <h1>FLÉCHETTES</h1>
-    <p>Compteur de score</p>
-  </div>
-  <div class="px">
-    <div class="setup-section">
-      <div class="section-label">Mode de jeu</div>
-      <div class="pill-group" id="gameModes">
-        <div class="pill active" data-val="501">501</div>
-        <div class="pill" data-val="301">301</div>
-        <div class="pill" data-val="201">201</div>
-        <div class="pill" data-val="cricket">Cricket</div>
-      </div>
-    </div>
-    <div class="setup-section">
-      <div class="section-label">Type de partie</div>
-      <div class="pill-group" id="partyTypes">
-        <div class="pill active" data-val="solo">Individuel</div>
-        <div class="pill" data-val="team2">Équipes ×2</div>
-        <div class="pill" data-val="team3">Équipes ×3</div>
-      </div>
-    </div>
-    <div class="setup-section" id="sectionPlayers">
-      <div class="section-label">Nombre de joueurs</div>
-      <div class="pill-group" id="playerCounts" style="flex-wrap:wrap">
-        <div class="pill active" data-val="1" style="min-width:calc(12.5% - 6px)">Solo</div>
-        <div class="pill" data-val="2" style="min-width:calc(12.5% - 6px)">2</div>
-        <div class="pill" data-val="3" style="min-width:calc(12.5% - 6px)">3</div>
-        <div class="pill" data-val="4" style="min-width:calc(12.5% - 6px)">4</div>
-        <div class="pill" data-val="5" style="min-width:calc(12.5% - 6px)">5</div>
-        <div class="pill" data-val="6" style="min-width:calc(12.5% - 6px)">6</div>
-        <div class="pill" data-val="7" style="min-width:calc(12.5% - 6px)">7</div>
-        <div class="pill" data-val="8" style="min-width:calc(12.5% - 6px)">8</div>
-      </div>
-    </div>
-    <div class="setup-section" id="sectionTeams" style="display:none">
-      <div class="section-label">Nombre d'équipes</div>
-      <div class="pill-group" id="teamCounts">
-        <div class="pill active" data-val="2">2 équipes</div>
-        <div class="pill" data-val="3">3 équipes</div>
-        <div class="pill" data-val="4">4 équipes</div>
-      </div>
-    </div>
-    <div class="setup-section">
-      <div class="section-label">Fin de manche</div>
-      <div class="pill-group" id="finModes">
-        <div class="pill active" data-val="simple">Simple</div>
-        <div class="pill" data-val="double">Double</div>
-      </div>
-    </div>
-    <div class="setup-section">
-      <div class="section-label" id="namesLabel">Noms des joueurs</div>
-      <div class="names-wrap" id="playerNames"></div>
-    </div>
-    <button class="start-btn" onclick="startGame()">LANCER LA PARTIE →</button>
-  </div>
-</div>
-
-<!-- ══════════════ GAME PAGE ══════════════ -->
-<div id="game-page">
-  <div class="top-bar">
-    <button class="back-btn" onclick="backToSetup()">←</button>
-    <div class="game-badge" id="modeBadge"></div>
-    <div style="display:flex;gap:6px;align-items:center">
-      <button onclick="confirmEndGame()" style="background:rgba(232,84,71,.12);border:1px solid rgba(232,84,71,.35);border-radius:20px;padding:5px 12px;font-family:var(--mono);font-size:11px;font-weight:600;color:var(--red);cursor:pointer;line-height:1">Terminer</button>
-      <button id="fullscreenBtn" onclick="toggleFullscreen()" style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 10px;font-size:16px;cursor:pointer;line-height:1" title="Plein écran">⛶</button>
-      <button id="themeBtnGame" onclick="toggleTheme()" style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 10px;font-size:16px;cursor:pointer;line-height:1">☀️</button>
-    </div>
-  </div>
-  <div class="scoreboard" id="scoreboard"></div>
-  <div class="checkout-box" id="checkoutBox">
-    <div class="co-label">💡 Conseils de sortie</div>
-    <div class="checkout-hints" id="checkoutHints"></div>
-  </div>
-  <div class="turn-row">
-    <div class="turn-name" id="turnName"></div>
-    <div class="dart-dots" id="dartDots"></div>
-  </div>
-  <div class="throw-log" id="throwLog"></div>
-  <div class="flash-msg" id="flashMsg"></div>
-  <div class="keypad">
-    <div class="mult-row">
-      <div class="mult-btn active" id="m1" onclick="setMult(1)">Simple</div>
-      <div class="mult-btn" id="m2" onclick="setMult(2)">Double ×2</div>
-      <div class="mult-btn" id="m3" onclick="setMult(3)">Triple ×3</div>
-    </div>
-    <div class="grid" id="numpad"></div>
-    <div class="bottom-actions">
-      <button class="undo-btn" onclick="undoThrow()">↩</button>
-      <button class="validate-btn" id="validateBtn" onclick="endTurn()" disabled>Valider le tour</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════ STATS PAGE ══════════════ -->
-<div class="page" id="stats-page">
-  <div id="resume-bar-stats" style="display:none;align-items:center;justify-content:space-between;gap:10px;margin:12px 20px 0;padding:12px 16px;background:rgba(62,207,122,.1);border:1px solid rgba(62,207,122,.3);border-radius:14px">
-    <div>
-      <div style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--green)">Partie en cours</div>
-      <div style="font-size:11px;color:var(--muted);margin-top:2px">Appuie pour reprendre</div>
-    </div>
-    <button onclick="resumeGame()" style="padding:9px 16px;background:var(--green);border:none;border-radius:10px;font-family:var(--mono);font-size:13px;font-weight:700;color:#0a0a0c;cursor:pointer">▶ Reprendre</button>
-  </div>
-  <div class="stats-header">
-    <h2>📊 Statistiques</h2>
-    <button class="clear-btn" onclick="clearStats()">Effacer</button>
-  </div>
-  <div class="stat-player-select" id="statPlayerSelect"></div>
-  <div id="statsContent"></div>
-</div>
-
-<!-- ══════════════ SYNC SCREEN ══════════════ -->
-<div id="sync-screen">
-  <button onclick="skipSync()" style="position:absolute;top:20px;left:20px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px 14px;color:var(--muted);font-size:16px;cursor:pointer">←</button>
-  <div class="sync-icon">🔗</div>
-  <div class="sync-title">Synchronisation</div>
-  <div class="sync-sub" id="syncSubText">Choisissez un code unique pour votre session.<br>Entrez le même code sur chaque appareil<br>pour partager vos statistiques.</div>
-  <div class="sync-input-wrap">
-    <input class="sync-input" id="syncCodeInput" type="number" inputmode="numeric" placeholder="ex: 1234">
-  </div>
-  <button class="sync-btn" onclick="connectSync()">Connecter</button>
-  <span class="sync-skip" onclick="skipSync()">Se déconnecter / Sans synchronisation</span>
-  <div class="sync-status" id="syncStatus"></div>
-</div>
-<!-- ══════════════ WIN SCREEN ══════════════ -->
-<canvas id="confetti-canvas" style="position:fixed;inset:0;z-index:45;pointer-events:none;display:none"></canvas>
-<div id="win-screen">
-  <div class="trophy">🎯</div>
-  <h2 id="winTitle"></h2>
-  <div class="win-sub" id="winSub"></div>
-  <table class="results-table">
-    <thead><tr id="winHead"></tr></thead>
-    <tbody id="winBody"></tbody>
-  </table>
-  <div id="win-game-stats" style="width:100%;max-width:400px;margin-bottom:12px"></div>
-  <button class="continue-btn" id="continueBtn" onclick="continueRound()" style="display:none">▶ Laisser les autres finir</button>
-  <div class="win-btns">
-    <button class="replay-btn" onclick="replayGame()">Rejouer</button>
-    <button class="new-btn" onclick="backToSetup(true)">Menu</button>
-  </div>
-</div>
-
-<!-- ══════════════ BOTTOM NAV ══════════════ -->
-<nav class="bottom-nav">
-  <button class="nav-btn active" id="nav-setup" onclick="navTo('setup')">
-    <span class="ni">
-      <svg class="dart-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <!-- pointe : gris acier -->
-        <path d="M22 11.6 L24 12 L22 12.4 L18 12 Z" fill="#a0a8b0"/>
-        <!-- baril : doré -->
-        <rect x="11" y="11" width="7" height="2" rx="1" fill="#f0c93a"/>
-        <!-- grip strié : doré -->
-        <rect x="8" y="10.5" width="3.5" height="3" rx=".8" fill="#f0c93a" opacity=".85"/>
-        <line x1="9" y1="10.5" x2="9" y2="13.5" stroke="#c9a420" stroke-width=".6" opacity=".6"/>
-        <line x1="10.2" y1="10.5" x2="10.2" y2="13.5" stroke="#c9a420" stroke-width=".6" opacity=".6"/>
-        <!-- shaft : doré clair -->
-        <rect x="4.5" y="11.3" width="3.8" height="1.4" rx=".7" fill="#f0c93a" opacity=".6"/>
-        <!-- ailettes : bleu -->
-        <path d="M4.5 11.3 C3 9.8 1.5 8.8 0.5 9.3 L2 11.3 Z" fill="#4799e8"/>
-        <path d="M4.5 12.7 C3 14.2 1.5 15.2 0.5 14.7 L2 12.7 Z" fill="#4799e8"/>
-        <path d="M3.2 11.3 L1.8 10.4 L1.8 11.3 Z" fill="#2d7ac9" opacity=".6"/>
-      </svg>
-    </span>Partie
-  </button>
-  <button class="nav-btn" id="nav-stats" onclick="navTo('stats')">
-    <span class="ni">📊</span>Stats
-  </button>
-</nav>
-
-<script>
+// ── MODE CRICKET ──<script>
 // ══════════════════════════════════════════════════════
 // CHECKOUT DB
 // ══════════════════════════════════════════════════════
@@ -1674,7 +893,7 @@ function buildNames(){
 // Initialise l'état du jeu selon la configuration
 // (mode solo/équipes, nombre de joueurs, mode de fin)
 // ─────────────────────────────────────────────
-function startGame(){try{
+function startGame(){
   const isTeam=cfg.partyType!=='solo';
   const ppt=cfg.partyType==='team2'?2:3;
   if(isTeam){
@@ -1709,7 +928,6 @@ function startGame(){try{
   if(cfg.mode==='cricket')initCricketState();
   navTo('game');
   renderGame();
-  }catch(e){alert('startGame ERROR: '+e.message+' line:'+e.lineNumber);}
 }
 
 // ══════════════════════════════════════════════════════
@@ -2585,6 +1803,788 @@ if('serviceWorker' in navigator){
     navigator.serviceWorker.register('./sw.js').catch(()=>{});
   });
 }
+
+var CRICKET_ZONES=[20,19,18,17,16,15,25];
+
+function updateGameMode(){
+  var isCricket=cfg.mode==='cricket';
+  var fs=document.getElementById('finModes');
+  if(fs&&fs.closest('.setup-section'))fs.closest('.setup-section').style.display=isCricket?'none':'';
+  if(isCricket)cfg.fin='simple';
+}
+
+function initCricketState(){
+  var CZ=CRICKET_ZONES;
+  function ic(){var o={};CZ.forEach(function(z){o[z]=0;});return o;}
+  if(gs.isTeam)gs.teams.forEach(function(t){t.cricket=ic();});
+  else gs.players.forEach(function(p){p.cricket=ic();});
+  gs.isCricket=true;
+}
+
+function renderCricket(){
+  var players=gs.isTeam?gs.teams:gs.players;
+  var cur=gs.isTeam?gs.curTeam:gs.cur;
+  var cols=players.length;
+  var gc='60px repeat('+cols+',1fr)';
+  var html='<div class="cricket-board">';
+  html+='<div style="display:grid;grid-template-columns:'+gc+';gap:8px;padding:4px 12px"><div></div>';
+  players.forEach(function(p,i){
+    html+='<div class="cricket-player'+(i===cur?' active-col':'')+'">'+p.name+'</div>';
+  });
+  html+='</div>';
+  CRICKET_ZONES.forEach(function(zone){
+    html+='<div class="cricket-row" style="display:grid;grid-template-columns:'+gc+';gap:8px">';
+    html+='<div class="cricket-zone">'+(zone===25?'Bull':zone)+'</div>';
+    players.forEach(function(p){
+      var hits=p.cricket[zone]||0;
+      if(hits>=3){html+='<div class="cricket-done">✓</div>';}
+      else{html+='<div class="cricket-marks">';for(var m=1;m<=3;m++)html+='<div class="cricket-mark'+(hits>=m?' hit':'')+'"></div>';html+='</div>';}
+    });
+    html+='</div>';
+  });
+  html+='<div style="padding:8px 12px;font-family:var(--mono);font-size:12px;color:var(--muted);text-align:center">';
+  html+=gs.throws.length>0?gs.throws.map(function(t){return t.label;}).join(' · '):'Tour de <span style="color:var(--accent)">'+players[cur].name+'</span>';
+  html+='</div></div>';
+  document.getElementById('scoreboard').innerHTML=html;
+  document.getElementById('checkoutBox').style.display='none';
+  var tl=document.querySelector('.throw-log');if(tl)tl.style.display='none';
+  var nb=document.querySelector('.numpad');if(nb)nb.style.display='none';
+  buildCricketNumpad();
+}
+
+function buildCricketNumpad(){
+  var np=document.getElementById('cricket-numpad');
+  if(!np){np=document.createElement('div');np.id='cricket-numpad';np.className='cricket-numpad';document.getElementById('game-page').appendChild(np);}
+  np.style.display='grid';
+  var m=gs.mult||1;
+  np.innerHTML=
+    '<button class="cnb'+(m===1?' mult-active':'')+'" onclick="setCricketMult(1)">S</button>'+
+    '<button class="cnb'+(m===2?' mult-active':'')+'" onclick="setCricketMult(2)">D</button>'+
+    '<button class="cnb'+(m===3?' mult-active':'')+'" onclick="setCricketMult(3)">T</button>'+
+    '<button class="cnb" style="color:var(--muted);font-size:13px" onclick="addThrowCricket(0)">Raté</button>'+
+    [20,19,18,17,16,15].map(function(v){return '<button class="cnb" onclick="addThrowCricket('+v+')">'+v+'</button>';}).join('')+
+    '<button class="cnb bull" onclick="addThrowCricket(25)">Bull</button>';
+}
+
+function setCricketMult(m){gs.mult=m;buildCricketNumpad();}
+
+function addThrowCricket(val){
+  var players=gs.isTeam?gs.teams:gs.players;
+  var cur=gs.isTeam?gs.curTeam:gs.cur;
+  var p=players[cur];
+  var mult=gs.mult||1;
+  var label='';
+  if(val===0){label='Raté';}
+  else if(val===25){label=(mult===2?'D':mult===3?'T':'')+'Bull';}
+  else{label=(mult===1?'S':mult===2?'D':'T')+val;}
+  gs.throws.push({label:label,pts:0});
+  recordThrowStat(p.name,label,0);
+  if(gs.isTeam)gs.teams[cur].dartsThisGame=(gs.teams[cur].dartsThisGame||0)+1;
+  else gs.players[cur].dartsThisGame=(gs.players[cur].dartsThisGame||0)+1;
+  if(val!==0&&CRICKET_ZONES.indexOf(val)>=0&&p.cricket[val]<3){
+    p.cricket[val]=Math.min(3,(p.cricket[val]||0)+mult);
+  }
+  gs.mult=1;
+  var won=CRICKET_ZONES.every(function(z){return p.cricket[z]>=3;});
+  if(won){
+    gs.finishOrder.push(cur);
+    recordGameStat(p.name,true,p.dartsThisGame||0);
+    renderCricket();
+    setTimeout(handleRoundEnd,120);
+    return;
+  }
+  renderCricket();
+  if(gs.throws.length>=3)setTimeout(function(){nextTurn();},300);
+}
+
+function cleanupCricket(){
+  var np=document.getElementById('cricket-numpad');if(np)np.remove();
+  var tl=document.querySelector('.throw-log');if(tl)tl.style.display='';
+  var nb=document.querySelector('.numpad');if(nb)nb.style.display='';
+  var cb=document.getElementById('checkoutBox');if(cb)cb.style.display='';
+}
+
+</script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<title>🎯 Fléchettes</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+:root{
+  --bg:#0a0a0c;
+  --surface:#141418;
+  --surface2:#1c1c22;
+  --surface3:#24242c;
+  --border:#2a2a35;
+  --border2:#343442;
+  --accent:#f0c93a;
+  --accent2:#c9a420;
+  --accent-glow:rgba(240,201,58,.18);
+  --red:#e85447;--green:#3ecf7a;--blue:#4799e8;
+  --text:#f2efe9;--muted:#666;--muted2:#444;
+  --mono:'DM Mono',monospace;--sans:'DM Sans',sans-serif;
+  --r:14px;--r-sm:10px;--r-lg:18px;
+}
+/* ── MODE LUMINEUX ── */
+body.light{
+  --bg:#f4f3ef;
+  --surface:#ffffff;
+  --surface2:#eceae4;
+  --surface3:#e2e0d8;
+  --border:#d0cdc4;
+  --border2:#bbb9b0;
+  --accent:#c9920a;
+  --accent2:#a07508;
+  --accent-glow:rgba(201,146,10,.15);
+  --text:#1a1814;
+  --muted:#888;
+  --muted2:#aaa;
+}
+body.light .bottom-nav{background:rgba(244,243,239,.92)}
+body.light #win-screen{background:#f4f3ef}
+body.light .suggestions{border-color:var(--accent)}
+body.light .confetti-canvas{} 
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100dvh;overflow-x:hidden;overflow-y:auto;user-select:none}
+
+/* ── NAV ── */
+.bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;
+  background:rgba(14,14,18,.92);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-top:1px solid var(--border);
+  display:flex;z-index:50;
+  padding-bottom:env(safe-area-inset-bottom);
+  min-height:68px;
+}
+.nav-btn{
+  flex:1;padding:6px 4px 6px;
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  cursor:pointer;border:none;background:none;
+  color:var(--muted);font-family:var(--sans);font-size:9px;font-weight:600;
+  letter-spacing:.3px;text-transform:uppercase;
+  transition:color .2s;position:relative;
+}
+.nav-btn.active{color:var(--accent)}
+.nav-btn.active::after{
+  content:'';position:absolute;bottom:-1px;left:25%;right:25%;
+  height:2px;background:var(--accent);border-radius:2px 2px 0 0;
+}
+.nav-btn .ni{font-size:22px;line-height:1;display:flex;align-items:center;justify-content:center;height:44px}
+/* SVG dart icon */
+.dart-icon{width:44px;height:44px}
+
+/* ── PAGES ── */
+.page{display:none;padding-bottom:180px}
+#setup-page{min-height:100dvh}
+#stats-page{min-height:100dvh}
+.page.active{display:block}
+
+/* ── SETUP HERO ── */
+.setup-hero{
+  text-align:center;padding:44px 0 28px;position:relative;overflow:hidden;
+}
+.hero-dart-wrap{font-size:80px;line-height:1;text-align:center;display:block;margin:0 auto 18px;animation:float 3s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.hero-glow{
+  position:absolute;top:-40px;left:50%;transform:translateX(-50%);
+  width:320px;height:320px;
+  background:radial-gradient(circle,var(--accent-glow) 0%,transparent 65%);
+  pointer-events:none;animation:pulse-glow 4s ease-in-out infinite;
+}
+@keyframes pulse-glow{0%,100%{opacity:.6;transform:translateX(-50%) scale(1)}50%{opacity:1;transform:translateX(-50%) scale(1.1)}}
+.hero-dart{width:72px;height:72px;margin:0 auto 14px;filter:drop-shadow(0 0 20px var(--accent-glow))}
+.setup-hero h1{
+  font-family:var(--mono);font-size:30px;font-weight:500;
+  color:var(--accent);letter-spacing:-1px;
+}
+.setup-hero p{font-size:10px;color:var(--muted);margin-top:5px;letter-spacing:2px;text-transform:uppercase}
+
+.px{padding:0 18px}
+.section-label{
+  font-size:9px;font-weight:700;color:var(--muted);
+  text-transform:uppercase;letter-spacing:1.8px;margin-bottom:10px;
+}
+.setup-section{margin-bottom:20px}
+
+/* Pills */
+.pill-group{display:flex;gap:6px;flex-wrap:wrap}
+.pill{
+  flex:1;padding:11px 6px;
+  border:1px solid var(--border2);border-radius:var(--r-sm);
+  background:var(--surface);color:var(--muted);
+  font-family:var(--mono);font-size:13px;font-weight:500;
+  cursor:pointer;text-align:center;
+  transition:all .15s;min-width:44px;
+}
+.pill:active{transform:scale(.96)}
+.pill.active{
+  background:var(--accent);border-color:var(--accent);color:#0a0a0c;
+  box-shadow:0 0 16px rgba(240,201,58,.25);
+}
+
+/* Name inputs */
+.names-wrap{display:flex;flex-direction:column;gap:8px}
+.team-block{
+  border:1px solid var(--border);border-radius:var(--r);
+  overflow:visible;background:var(--surface);
+}
+.team-header{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 14px;background:var(--surface2);
+  border-radius:var(--r) var(--r) 0 0;
+}
+.team-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;box-shadow:0 0 6px currentColor}
+.team-lbl{font-family:var(--mono);font-size:12px;font-weight:500}
+.team-name-input::placeholder{color:var(--muted);font-weight:400}
+
+/* autocomplete */
+.input-wrap{position:relative;flex:1;min-width:0}
+.suggestions{
+  /* la bordure reste toujours visible */
+  border:1px solid var(--accent);border-radius:var(--r-sm);
+  overflow:hidden; /* clip le contenu interne */
+  max-height:200px;
+  box-shadow:0 8px 24px rgba(0,0,0,.8);
+  position:relative;
+}
+.suggestions-inner{
+  overflow-y:auto;overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+  max-height:200px;
+  background:var(--surface2);
+  border-radius:var(--r-sm);
+  scroll-behavior:smooth;
+  -webkit-mask-image:linear-gradient(to bottom, transparent 0px, black 40px);
+  mask-image:linear-gradient(to bottom, transparent 0px, black 40px);
+}
+.suggestions-inner.at-top{
+  -webkit-mask-image:none;
+  mask-image:none;
+}
+.sug-item{
+  padding:11px 14px;font-size:14px;color:var(--text);cursor:pointer;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--border);
+}
+.sug-item:last-child{border-bottom:none}
+.sug-item:active,.sug-item:hover{background:var(--surface3)}
+.sug-item .sug-name{flex:1}
+.sug-item .sug-del{font-size:18px;color:var(--muted);padding:0 4px;line-height:1}
+.sug-team-item{
+  padding:10px 14px;font-family:var(--mono);font-size:12px;
+  cursor:pointer;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.sug-team-item:last-child{border-bottom:none}
+.sug-team-item:active{background:var(--surface3)}
+
+.prow-solo{
+  display:flex;align-items:center;gap:10px;padding:0;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);overflow:visible;cursor:text;
+}
+.prow-team{
+  display:flex;align-items:center;gap:10px;padding:0;
+  border-top:1px solid var(--border);overflow:visible;cursor:text;
+}
+.pnum{font-family:var(--mono);font-size:11px;color:var(--muted2);width:16px;flex-shrink:0;padding-left:14px}
+.prow-solo input,.prow-team input{
+  flex:1;background:transparent;border:none;
+  color:var(--text);font-family:var(--sans);font-size:14px;outline:none;
+  padding:13px 14px 13px 0;cursor:text;
+  /* zone de clic étendue à tout le rectangle */
+  min-height:48px;width:100%;
+}
+.prow-solo input::placeholder,.prow-team input::placeholder{color:var(--muted)}
+
+/* Start button */
+.start-btn{
+  width:100%;padding:16px;
+  background:linear-gradient(135deg,#3ecf7a 0%,#27a85a 100%);
+  color:#0a0a0c;border:none;border-radius:var(--r);
+  font-family:var(--mono);font-size:15px;font-weight:700;
+  cursor:pointer;letter-spacing:.8px;
+  box-shadow:0 4px 24px rgba(62,207,122,.35);
+  transition:transform .12s,box-shadow .12s;margin-top:16px;
+}
+.start-btn:active{transform:scale(.97);box-shadow:0 2px 12px rgba(240,201,58,.2)}
+
+/* ── GAME ── */
+#game-page{min-height:100dvh;flex-direction:column;padding-bottom:80px;overflow-y:auto;display:none}
+.top-bar{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 0;flex-shrink:0}
+.back-btn{
+  font-size:18px;cursor:pointer;color:var(--muted);
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:8px;padding:6px 10px;transition:all .15s;
+}
+.back-btn:active{background:var(--surface3)}
+.game-badge{
+  font-family:var(--mono);font-size:10px;color:var(--accent);
+  background:var(--accent-glow);padding:5px 12px;
+  border-radius:20px;border:1px solid rgba(240,201,58,.25);
+  letter-spacing:.3px;
+}
+
+/* Scoreboard */
+.scoreboard{display:flex;gap:8px;padding:12px 16px 8px;overflow-x:auto;scrollbar-width:none;flex-shrink:0}
+.scoreboard::-webkit-scrollbar{display:none}
+
+.team-card{
+  flex:1;min-width:72px;
+  background:var(--surface);border:1.5px solid var(--border);
+  border-radius:var(--r);padding:10px 7px;
+  text-align:center;transition:all .25s;
+  position:relative;overflow:hidden;
+}
+.team-card.active{box-shadow:0 0 20px -4px currentColor}
+.team-card.finished{opacity:.45}
+.tc-bar{position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--r) var(--r) 0 0}
+.tc-name{font-size:10px;color:var(--muted);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+.tc-score{font-family:var(--mono);font-size:22px;font-weight:500;color:var(--text);line-height:1}
+.team-card.finished .tc-score{font-size:16px;color:var(--green)}
+.tc-legs{font-size:9px;color:var(--muted);margin-top:3px;font-family:var(--mono)}
+.tc-members{font-size:9px;color:var(--muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.player-card{
+  flex:1;min-width:62px;max-width:120px;
+  background:var(--surface);border:1.5px solid var(--border);
+  border-radius:var(--r);padding:10px 7px;
+  text-align:center;transition:all .25s;position:relative;overflow:hidden;
+}
+.player-card.active{border-color:var(--accent);background:rgba(240,201,58,.05);box-shadow:0 0 18px -4px var(--accent-glow)}
+.player-card.active::before{content:'';position:absolute;top:0;left:0;right:0;height:2.5px;background:var(--accent)}
+.player-card.finished{opacity:.45}
+.player-card.finished .pc-score{color:var(--green);font-size:16px}
+.pc-name{font-size:10px;color:var(--muted);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+.player-card.active .pc-name{color:var(--accent)}
+.pc-score{font-family:var(--mono);font-size:22px;font-weight:500;color:var(--text);line-height:1}
+.pc-live{font-family:var(--mono);font-size:15px;font-weight:600;color:#3ecf7a;line-height:1;margin-top:3px;min-height:18px}
+.tc-live{font-family:var(--mono);font-size:13px;font-weight:600;color:#3ecf7a;line-height:1;margin-top:2px;min-height:16px}
+.pc-legs{font-size:9px;color:var(--muted);margin-top:3px;font-family:var(--mono)}
+
+/* Checkout */
+.checkout-box{
+  margin:0 16px 8px;
+  background:linear-gradient(135deg,rgba(71,153,232,.07),rgba(71,153,232,.04));
+  border:1px solid rgba(71,153,232,.2);border-radius:var(--r);
+  padding:10px 14px;display:none;flex-shrink:0;
+}
+.co-label{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:var(--blue);margin-bottom:6px;font-weight:700}
+.checkout-hints{display:flex;flex-wrap:wrap;gap:5px}
+.co-hint{
+  background:rgba(71,153,232,.1);border:1px solid rgba(71,153,232,.25);
+  border-radius:20px;padding:4px 10px;
+  font-family:var(--mono);font-size:12px;color:#7ab8f5;
+}
+
+/* Turn row */
+.turn-row{display:flex;align-items:center;justify-content:space-between;padding:0 16px 6px;flex-shrink:0}
+.turn-name{font-size:13px;font-weight:600;color:var(--text)}
+.dart-dots{display:flex;gap:6px}
+.dot{
+  width:10px;height:10px;border-radius:50%;
+  background:var(--surface3);border:1px solid var(--border2);
+  transition:all .2s;
+}
+.dot.thrown{background:var(--accent);border-color:var(--accent);box-shadow:0 0 8px var(--accent-glow)}
+
+/* Throw log */
+.throw-log{display:flex;gap:5px;align-items:center;padding:0 16px 6px;min-height:30px;flex-wrap:wrap;flex-shrink:0}
+.throw-tag{
+  background:var(--surface2);border:1px solid var(--border2);
+  border-radius:20px;padding:3px 10px;
+  font-family:var(--mono);font-size:12px;color:var(--text);
+}
+.throw-total{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--accent);margin-left:auto}
+
+/* Flash */
+.flash-msg{
+  margin:0 16px 6px;padding:8px 14px;border-radius:var(--r-sm);
+  font-size:13px;text-align:center;display:none;
+  font-family:var(--mono);flex-shrink:0;font-weight:500;
+}
+.flash-msg.ok{background:rgba(62,207,122,.1);border:1px solid rgba(62,207,122,.3);color:var(--green)}
+.flash-msg.err{background:rgba(232,84,71,.1);border:1px solid rgba(232,84,71,.3);color:var(--red)}
+
+/* Keypad */
+.keypad{padding:0 16px 8px;display:flex;flex-direction:column;gap:8px}
+.mult-row{display:flex;gap:6px;flex-shrink:0}
+.mult-btn{
+  flex:1;padding:9px 4px;
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:var(--r-sm);
+  font-family:var(--mono);font-size:12px;font-weight:500;color:var(--muted);
+  cursor:pointer;text-align:center;transition:all .15s;
+}
+.mult-btn.active{
+  background:rgba(240,201,58,.12);border-color:rgba(240,201,58,.4);
+  color:var(--accent);
+}
+.grid{display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(5,48px);gap:5px}
+.num-btn{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r-sm);
+  font-family:var(--mono);font-size:14px;font-weight:500;color:var(--text);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  height:48px;transition:transform .08s,background .1s,border-color .1s;
+}
+.num-btn:active{transform:scale(.90);background:var(--surface3)}
+.num-btn.bull{border-color:rgba(240,201,58,.25);color:var(--accent)}
+.num-btn.dbull{
+  background:rgba(240,201,58,.07);border-color:rgba(240,201,58,.35);
+  color:var(--accent);font-size:11px;
+}
+.num-btn.miss{color:var(--muted2)}
+
+/* Actions */
+.bottom-actions{display:flex;gap:8px;flex-shrink:0}
+.undo-btn{
+  padding:13px 16px;
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:var(--r);color:var(--muted);font-size:18px;cursor:pointer;
+  transition:all .15s;
+}
+.undo-btn:active{background:var(--surface3)}
+.validate-btn{
+  flex:1;padding:13px;
+  background:linear-gradient(135deg,var(--accent) 0%,#d4a820 100%);
+  border:none;border-radius:var(--r);
+  font-family:var(--mono);font-size:14px;font-weight:700;color:#0a0a0c;
+  cursor:pointer;box-shadow:0 4px 16px rgba(240,201,58,.25);
+  transition:all .15s;
+}
+.validate-btn:disabled{
+  background:var(--surface);border:1px solid var(--border);
+  color:var(--muted);cursor:default;box-shadow:none;
+}
+.validate-btn:not(:disabled):active{transform:scale(.98);box-shadow:0 2px 8px rgba(240,201,58,.15)}
+
+/* ── WIN SCREEN ── */
+#win-screen{
+  display:none;flex-direction:column;align-items:center;
+  min-height:100dvh;padding:40px 20px 120px;text-align:center;
+  background:#0a0a0c;
+  position:fixed;inset:0;z-index:41;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  justify-content:flex-start;
+}
+#win-screen .trophy{font-size:72px;margin-bottom:18px;animation:pop .5s cubic-bezier(.175,.885,.32,1.275)}
+@keyframes pop{from{transform:scale(0) rotate(-10deg);opacity:0}to{transform:scale(1) rotate(0);opacity:1}}
+#win-screen h2{font-family:var(--mono);font-size:22px;color:var(--accent);margin-bottom:5px;letter-spacing:-.5px}
+#win-screen .win-sub{font-size:11px;color:var(--muted);margin-bottom:22px;text-transform:uppercase;letter-spacing:1.2px}
+.results-table{
+  width:100%;max-width:400px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);overflow:hidden;margin-bottom:16px;
+}
+.results-table th{padding:9px 10px;font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);background:var(--surface2);font-weight:700;text-align:left}
+.results-table td{padding:10px 10px;font-family:var(--mono);font-size:12px;border-top:1px solid var(--border)}
+.winner-row td{color:var(--accent)}
+.continue-btn{
+  width:100%;max-width:400px;padding:13px;margin-bottom:10px;
+  background:rgba(62,207,122,.08);border:1px solid rgba(62,207,122,.3);
+  border-radius:var(--r);font-family:var(--mono);font-size:13px;font-weight:600;
+  color:var(--green);cursor:pointer;transition:all .15s;
+}
+.continue-btn:active{background:rgba(62,207,122,.14)}
+.win-btns{display:flex;gap:8px;width:100%;max-width:400px}
+.replay-btn{
+  flex:1;padding:13px;
+  background:linear-gradient(135deg,var(--accent) 0%,#d4a820 100%);
+  border:none;border-radius:var(--r);
+  font-family:var(--mono);font-size:13px;font-weight:700;color:#0a0a0c;
+  cursor:pointer;box-shadow:0 4px 16px rgba(240,201,58,.25);
+}
+.new-btn{
+  padding:13px 16px;
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:var(--r);font-family:var(--mono);font-size:13px;color:var(--muted);cursor:pointer;
+}
+
+/* ── SYNC ── */
+#sync-screen{display:none;position:fixed;inset:0;background:#0a0a0c;z-index:60;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center}
+#sync-screen.show{display:flex}
+.sync-icon{font-size:48px;margin-bottom:16px}
+.sync-title{font-family:var(--mono);font-size:22px;color:var(--accent);margin-bottom:8px}
+.sync-sub{font-size:13px;color:var(--muted);margin-bottom:32px;line-height:1.7}
+.sync-input-wrap{display:flex;flex-direction:column;gap:12px;width:100%;max-width:280px;margin-bottom:20px}
+.sync-input{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);padding:14px;color:var(--text);font-family:var(--mono);font-size:22px;text-align:center;outline:none;letter-spacing:10px;width:100%}
+.sync-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+.sync-input::placeholder{letter-spacing:2px;font-size:14px;color:var(--muted)}
+.sync-btn{width:100%;max-width:280px;padding:14px;background:linear-gradient(135deg,var(--accent),#d4a820);border:none;border-radius:var(--r);font-family:var(--mono);font-size:15px;font-weight:700;color:#0a0a0c;cursor:pointer;margin-bottom:12px;box-shadow:0 4px 20px rgba(240,201,58,.25)}
+.sync-skip{font-size:12px;color:var(--muted);cursor:pointer;text-decoration:underline}
+.sync-field-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;text-align:left;width:100%;max-width:280px;margin-bottom:4px}
+.sync-status{font-family:var(--mono);font-size:12px;margin-top:8px;min-height:18px}
+.sync-status.ok{color:var(--green)}
+.sync-status.err{color:var(--red)}
+.sync-badge{display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-family:var(--mono);font-size:10px;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--muted);transition:all .15s}
+.sync-badge.connected{border-color:rgba(62,207,122,.4);color:var(--green);background:rgba(62,207,122,.07)}
+.sync-badge .sb-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+
+/* ── WIN GAME STATS ── */
+.wgs-title{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;text-align:left}
+.wgs-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.wgs-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 12px}
+.wgs-card.full{grid-column:1/-1}
+.wgs-name{font-size:11px;color:var(--accent);margin-bottom:4px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wgs-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px}
+.wgs-val{font-family:var(--mono);font-size:16px;font-weight:500;color:var(--text);margin-top:2px}
+.wgs-sub{font-size:10px;color:var(--muted);margin-top:2px}
+
+/* ── STATS ── */
+#stats-page{overflow-y:auto}
+.stats-header{padding:22px 20px 14px;display:flex;align-items:center;justify-content:space-between}
+.stats-header h2{font-family:var(--mono);font-size:20px;color:var(--accent);letter-spacing:-.5px}
+.clear-btn{font-size:11px;color:var(--muted);background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:6px 12px;cursor:pointer;font-family:var(--mono)}
+.stat-player-select{padding:0 20px 16px;display:flex;gap:7px;overflow-x:auto;scrollbar-width:none}
+.stat-player-select::-webkit-scrollbar{display:none}
+.sp-pill{padding:7px 16px;border:2px solid transparent;border-radius:20px;background:var(--surface);color:var(--muted);font-family:var(--mono);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:background .15s,color .15s,border-color .15s;outline:1px solid var(--border2);outline-offset:-1px}
+.sp-pill.active{background:var(--accent);border-color:var(--accent);color:#0a0a0c;outline:none}
+.stat-empty{text-align:center;padding:70px 20px;color:var(--muted);font-size:14px}
+.stat-empty .se-icon{font-size:44px;margin-bottom:14px;opacity:.5}
+
+/* stat cards */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 18px 16px}
+.stat-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:14px;
+  transition:border-color .2s;
+}
+.stat-card.full{grid-column:1/-1}
+.sc-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px;font-weight:700}
+.sc-val{font-family:var(--mono);font-size:26px;font-weight:500;color:var(--text)}
+.sc-sub{font-size:11px;color:var(--muted);margin-top:4px}
+
+/* bar chart */
+.bar-chart{padding:4px 0}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.bar-lbl{font-family:var(--mono);font-size:11px;color:var(--muted);width:28px;text-align:right;flex-shrink:0}
+.bar-track{flex:1;height:14px;background:var(--surface2);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;background:var(--accent);transition:width .4s}
+.bar-count{font-family:var(--mono);font-size:10px;color:var(--muted);width:28px;flex-shrink:0}
+
+/* history list */
+.history-list{padding:0 20px 16px;display:flex;flex-direction:column;gap:8px}
+.hist-item{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px}
+.hist-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.hist-mode{font-family:var(--mono);font-size:11px;color:var(--accent)}
+.hist-date{font-size:10px;color:var(--muted)}
+.hist-score{font-family:var(--mono);font-size:13px;color:var(--text)}
+.hist-score span{color:var(--muted);font-size:11px}
+.stat-section-label{padding:0 20px 8px;font-size:10px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px}
+.cricket-board{padding:8px 16px;display:flex;flex-direction:column;gap:6px}
+.cricket-row{display:grid;align-items:center;background:var(--surface);border-radius:10px;padding:8px 12px;gap:8px}
+.cricket-zone{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--accent);text-align:center}
+.cricket-marks{display:flex;gap:4px;align-items:center;justify-content:center}
+.cricket-mark{width:18px;height:18px;border-radius:50%;border:2px solid var(--border2);transition:all .2s}
+.cricket-mark.hit{border-color:var(--accent);background:var(--accent)}
+.cricket-done{color:var(--green);font-size:16px;text-align:center}
+.cricket-player{font-family:var(--mono);font-size:11px;font-weight:600;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cricket-player.active-col{color:var(--accent)}
+.cricket-numpad{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px 16px}
+.cricket-numpad .cnb{border-radius:12px;padding:14px 0;font-family:var(--mono);font-size:18px;font-weight:700;background:var(--surface);border:1px solid var(--border);color:var(--text);cursor:pointer;text-align:center;transition:background .1s}
+.cricket-numpad .cnb.bull{color:var(--accent)}
+.cricket-numpad .cnb.mult-active{background:var(--accent);color:#0a0a0c}
+</style>
+</head>
+<body>
+
+<!-- ══════════════ SETUP PAGE ══════════════ -->
+<div class="page active" id="setup-page">
+  <!-- Barre "Reprendre la partie" -->
+  <div id="resume-bar" style="display:none;align-items:center;justify-content:space-between;gap:10px;margin:12px 20px 0;padding:12px 16px;background:rgba(62,207,122,.1);border:1px solid rgba(62,207,122,.3);border-radius:14px">
+    <div>
+      <div style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--green)">Partie en cours</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">Tu as quitté sans terminer</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button onclick="resumeGame()" style="padding:9px 16px;background:var(--green);border:none;border-radius:10px;font-family:var(--mono);font-size:13px;font-weight:700;color:#0a0a0c;cursor:pointer">▶ Reprendre</button>
+      <button onclick="backToSetup(true)" style="padding:9px 12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;font-family:var(--mono);font-size:12px;color:var(--muted);cursor:pointer">Abandon</button>
+    </div>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 20px 0">
+    <div style="display:flex;gap:6px">
+      <button id="fullscreenBtnSetup" onclick="toggleFullscreen()" style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:18px;cursor:pointer;line-height:1" title="Plein écran">⛶</button>
+      <button id="themeBtn" onclick="toggleTheme()" style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:18px;cursor:pointer;line-height:1">☀️</button>
+    </div>
+    <div class="sync-badge" id="syncBadge" onclick="openSyncScreen()">
+      <span class="sb-dot"></span><span id="syncBadgeLabel">Non synchronisé</span>
+    </div>
+  </div>
+  <div class="setup-hero">
+    <div class="hero-glow"></div>
+    <div class="hero-dart-wrap">🎯</div>
+    <h1>FLÉCHETTES</h1>
+    <p>Compteur de score</p>
+  </div>
+  <div class="px">
+    <div class="setup-section">
+      <div class="section-label">Mode de jeu</div>
+      <div class="pill-group" id="gameModes">
+        <div class="pill active" data-val="501">501</div>
+        <div class="pill" data-val="301">301</div>
+        <div class="pill" data-val="201">201</div>
+        <div class="pill" data-val="cricket">Cricket</div>
+      </div>
+    </div>
+    <div class="setup-section">
+      <div class="section-label">Type de partie</div>
+      <div class="pill-group" id="partyTypes">
+        <div class="pill active" data-val="solo">Individuel</div>
+        <div class="pill" data-val="team2">Équipes ×2</div>
+        <div class="pill" data-val="team3">Équipes ×3</div>
+      </div>
+    </div>
+    <div class="setup-section" id="sectionPlayers">
+      <div class="section-label">Nombre de joueurs</div>
+      <div class="pill-group" id="playerCounts" style="flex-wrap:wrap">
+        <div class="pill active" data-val="1" style="min-width:calc(12.5% - 6px)">Solo</div>
+        <div class="pill" data-val="2" style="min-width:calc(12.5% - 6px)">2</div>
+        <div class="pill" data-val="3" style="min-width:calc(12.5% - 6px)">3</div>
+        <div class="pill" data-val="4" style="min-width:calc(12.5% - 6px)">4</div>
+        <div class="pill" data-val="5" style="min-width:calc(12.5% - 6px)">5</div>
+        <div class="pill" data-val="6" style="min-width:calc(12.5% - 6px)">6</div>
+        <div class="pill" data-val="7" style="min-width:calc(12.5% - 6px)">7</div>
+        <div class="pill" data-val="8" style="min-width:calc(12.5% - 6px)">8</div>
+      </div>
+    </div>
+    <div class="setup-section" id="sectionTeams" style="display:none">
+      <div class="section-label">Nombre d'équipes</div>
+      <div class="pill-group" id="teamCounts">
+        <div class="pill active" data-val="2">2 équipes</div>
+        <div class="pill" data-val="3">3 équipes</div>
+        <div class="pill" data-val="4">4 équipes</div>
+      </div>
+    </div>
+    <div class="setup-section">
+      <div class="section-label">Fin de manche</div>
+      <div class="pill-group" id="finModes">
+        <div class="pill active" data-val="simple">Simple</div>
+        <div class="pill" data-val="double">Double</div>
+      </div>
+    </div>
+    <div class="setup-section">
+      <div class="section-label" id="namesLabel">Noms des joueurs</div>
+      <div class="names-wrap" id="playerNames"></div>
+    </div>
+    <button class="start-btn" onclick="startGame()">LANCER LA PARTIE →</button>
+  </div>
+</div>
+
+<!-- ══════════════ GAME PAGE ══════════════ -->
+<div id="game-page">
+  <div class="top-bar">
+    <button class="back-btn" onclick="backToSetup()">←</button>
+    <div class="game-badge" id="modeBadge"></div>
+    <div style="display:flex;gap:6px;align-items:center">
+      <button onclick="confirmEndGame()" style="background:rgba(232,84,71,.12);border:1px solid rgba(232,84,71,.35);border-radius:20px;padding:5px 12px;font-family:var(--mono);font-size:11px;font-weight:600;color:var(--red);cursor:pointer;line-height:1">Terminer</button>
+      <button id="fullscreenBtn" onclick="toggleFullscreen()" style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 10px;font-size:16px;cursor:pointer;line-height:1" title="Plein écran">⛶</button>
+      <button id="themeBtnGame" onclick="toggleTheme()" style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 10px;font-size:16px;cursor:pointer;line-height:1">☀️</button>
+    </div>
+  </div>
+  <div class="scoreboard" id="scoreboard"></div>
+  <div class="checkout-box" id="checkoutBox">
+    <div class="co-label">💡 Conseils de sortie</div>
+    <div class="checkout-hints" id="checkoutHints"></div>
+  </div>
+  <div class="turn-row">
+    <div class="turn-name" id="turnName"></div>
+    <div class="dart-dots" id="dartDots"></div>
+  </div>
+  <div class="throw-log" id="throwLog"></div>
+  <div class="flash-msg" id="flashMsg"></div>
+  <div class="keypad">
+    <div class="mult-row">
+      <div class="mult-btn active" id="m1" onclick="setMult(1)">Simple</div>
+      <div class="mult-btn" id="m2" onclick="setMult(2)">Double ×2</div>
+      <div class="mult-btn" id="m3" onclick="setMult(3)">Triple ×3</div>
+    </div>
+    <div class="grid" id="numpad"></div>
+    <div class="bottom-actions">
+      <button class="undo-btn" onclick="undoThrow()">↩</button>
+      <button class="validate-btn" id="validateBtn" onclick="endTurn()" disabled>Valider le tour</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ STATS PAGE ══════════════ -->
+<div class="page" id="stats-page">
+  <div id="resume-bar-stats" style="display:none;align-items:center;justify-content:space-between;gap:10px;margin:12px 20px 0;padding:12px 16px;background:rgba(62,207,122,.1);border:1px solid rgba(62,207,122,.3);border-radius:14px">
+    <div>
+      <div style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--green)">Partie en cours</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">Appuie pour reprendre</div>
+    </div>
+    <button onclick="resumeGame()" style="padding:9px 16px;background:var(--green);border:none;border-radius:10px;font-family:var(--mono);font-size:13px;font-weight:700;color:#0a0a0c;cursor:pointer">▶ Reprendre</button>
+  </div>
+  <div class="stats-header">
+    <h2>📊 Statistiques</h2>
+    <button class="clear-btn" onclick="clearStats()">Effacer</button>
+  </div>
+  <div class="stat-player-select" id="statPlayerSelect"></div>
+  <div id="statsContent"></div>
+</div>
+
+<!-- ══════════════ SYNC SCREEN ══════════════ -->
+<div id="sync-screen">
+  <button onclick="skipSync()" style="position:absolute;top:20px;left:20px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px 14px;color:var(--muted);font-size:16px;cursor:pointer">←</button>
+  <div class="sync-icon">🔗</div>
+  <div class="sync-title">Synchronisation</div>
+  <div class="sync-sub" id="syncSubText">Choisissez un code unique pour votre session.<br>Entrez le même code sur chaque appareil<br>pour partager vos statistiques.</div>
+  <div class="sync-input-wrap">
+    <input class="sync-input" id="syncCodeInput" type="number" inputmode="numeric" placeholder="ex: 1234">
+  </div>
+  <button class="sync-btn" onclick="connectSync()">Connecter</button>
+  <span class="sync-skip" onclick="skipSync()">Se déconnecter / Sans synchronisation</span>
+  <div class="sync-status" id="syncStatus"></div>
+</div>
+<!-- ══════════════ WIN SCREEN ══════════════ -->
+<canvas id="confetti-canvas" style="position:fixed;inset:0;z-index:45;pointer-events:none;display:none"></canvas>
+<div id="win-screen">
+  <div class="trophy">🎯</div>
+  <h2 id="winTitle"></h2>
+  <div class="win-sub" id="winSub"></div>
+  <table class="results-table">
+    <thead><tr id="winHead"></tr></thead>
+    <tbody id="winBody"></tbody>
+  </table>
+  <div id="win-game-stats" style="width:100%;max-width:400px;margin-bottom:12px"></div>
+  <button class="continue-btn" id="continueBtn" onclick="continueRound()" style="display:none">▶ Laisser les autres finir</button>
+  <div class="win-btns">
+    <button class="replay-btn" onclick="replayGame()">Rejouer</button>
+    <button class="new-btn" onclick="backToSetup(true)">Menu</button>
+  </div>
+</div>
+
+<!-- ══════════════ BOTTOM NAV ══════════════ -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" id="nav-setup" onclick="navTo('setup')">
+    <span class="ni">
+      <svg class="dart-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- pointe : gris acier -->
+        <path d="M22 11.6 L24 12 L22 12.4 L18 12 Z" fill="#a0a8b0"/>
+        <!-- baril : doré -->
+        <rect x="11" y="11" width="7" height="2" rx="1" fill="#f0c93a"/>
+        <!-- grip strié : doré -->
+        <rect x="8" y="10.5" width="3.5" height="3" rx=".8" fill="#f0c93a" opacity=".85"/>
+        <line x1="9" y1="10.5" x2="9" y2="13.5" stroke="#c9a420" stroke-width=".6" opacity=".6"/>
+        <line x1="10.2" y1="10.5" x2="10.2" y2="13.5" stroke="#c9a420" stroke-width=".6" opacity=".6"/>
+        <!-- shaft : doré clair -->
+        <rect x="4.5" y="11.3" width="3.8" height="1.4" rx=".7" fill="#f0c93a" opacity=".6"/>
+        <!-- ailettes : bleu -->
+        <path d="M4.5 11.3 C3 9.8 1.5 8.8 0.5 9.3 L2 11.3 Z" fill="#4799e8"/>
+        <path d="M4.5 12.7 C3 14.2 1.5 15.2 0.5 14.7 L2 12.7 Z" fill="#4799e8"/>
+        <path d="M3.2 11.3 L1.8 10.4 L1.8 11.3 Z" fill="#2d7ac9" opacity=".6"/>
+      </svg>
+    </span>Partie
+  </button>
+  <button class="nav-btn" id="nav-stats" onclick="navTo('stats')">
+    <span class="ni">📊</span>Stats
+  </button>
+</nav>
+
+
 </script>
 </body>
 </html>
