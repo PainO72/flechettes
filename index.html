@@ -694,19 +694,21 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 </nav>
 
 <script>
+window.onerror=function(msg,src,line,col,err){alert("ERR L"+line+": "+msg);return false;};
+
 // ======================================================
 // CHECKOUT DB
 // ======================================================
 // ---------------------------------------------
 // BASE DE DONN  ES DES COMBINAISONS DE SORTIE
-// Contient les meilleures combinaisons pour cl  turer
+// Contient les meilleures combinaisons pour clôturer
 // en mode Double/Master (scores 2    170)
 // ---------------------------------------------
 const CHECKOUTS={170:["T20 T20 B25"],167:["T20 T19 B25"],164:["T20 T18 B25"],161:["T20 T17 B25"],160:["T20 T20 D20"],158:["T20 T20 D19"],157:["T20 T19 D20"],156:["T20 T20 D18"],155:["T20 T19 D19"],154:["T20 T18 D20"],153:["T20 T19 D18"],152:["T20 T20 D16"],151:["T20 T19 D17"],150:["T20 T18 D18"],149:["T20 T19 D16"],148:["T20 T20 D14"],147:["T20 T17 D18"],146:["T20 T18 D16"],145:["T20 T15 D20"],144:["T20 T20 D12"],143:["T20 T17 D16"],142:["T20 T14 D20"],141:["T20 T15 D18"],140:["T20 T20 D10"],139:["T20 T19 D11"],138:["T20 T18 D12"],137:["T20 T19 D10"],136:["T20 T20 D8"],135:["T20 T17 D12"],134:["T20 T14 D16"],133:["T20 T19 D8"],132:["T20 T16 D12"],131:["T20 T13 D16"],130:["T20 T18 D8"],129:["T20 T19 D6"],128:["T20 T16 D10"],127:["T20 T17 D8"],126:["T20 T16 D9"],125:["T20 T15 D10"],124:["T20 T16 D8"],123:["T20 T13 D12"],122:["T18 T18 D7"],121:["T20 T11 D14"],120:["T20 S20 D20"],119:["T19 T12 D13"],118:["T20 S18 D20"],117:["T20 S17 D20"],116:["T20 S16 D20"],115:["T20 S15 D20"],114:["T20 S14 D20"],113:["T20 S13 D20"],112:["T20 S12 D20"],111:["T20 S11 D20"],110:["T20 S10 D20"],109:["T20 S9 D20"],108:["T20 S8 D20"],107:["T20 S7 D20"],106:["T20 S6 D20"],105:["T20 S5 D20"],104:["T20 S4 D20"],103:["T20 S3 D20"],102:["T20 S2 D20"],101:["T20 S1 D20"],100:["T20 D20"],99:["T19 S10 D16"],98:["T20 D19"],97:["T19 D20"],96:["T20 D18"],95:["T19 D19"],94:["T18 D20"],93:["T19 D18"],92:["T20 D16"],91:["T17 D20"],90:["T18 D18","T20 D15"],89:["T19 D16"],88:["T20 D14","T16 D20"],87:["T17 D18","T19 D15"],86:["T18 D16"],85:["T15 D20","T19 D14"],84:["T20 D12","T16 D18"],83:["T17 D16"],82:["T14 D20","T18 D14"],81:["T19 D12"],80:["T20 D10","T16 D16"],79:["T13 D20"],78:["T18 D12"],77:["T19 D10"],76:["T20 D8"],75:["T17 D12"],74:["T14 D16"],73:["T19 D8"],72:["T16 D12"],71:["T13 D16"],70:["T18 D8","T10 D20"],69:["T19 D6"],68:["T20 D4"],67:["T17 D8"],66:["T10 D18"],65:["T19 D4"],64:["T16 D8"],63:["T13 D12"],62:["T10 D16"],61:["T15 D8"],60:["S20 D20"],59:["S19 D20"],58:["S18 D20"],57:["S17 D20"],56:["S16 D20"],55:["S15 D20"],54:["S14 D20"],53:["S13 D20"],52:["S12 D20"],51:["S11 D20"],50:["B25","S10 D20"],49:["S9 D20"],48:["S16 D16"],47:["S15 D16"],46:["S6 D20"],45:["S13 D16"],44:["S12 D16"],43:["S11 D16"],42:["S10 D16"],41:["S9 D16"],40:["D20"],39:["S7 D16"],38:["D19"],37:["S5 D16"],36:["D18"],35:["S3 D16"],34:["D17"],33:["S1 D16"],32:["D16"],31:["S15 D8"],30:["D15"],29:["S13 D8"],28:["D14"],27:["S11 D8"],26:["D13"],25:["S9 D8"],24:["D12"],23:["S7 D8"],22:["D11"],21:["S5 D8"],20:["D10"],18:["D9"],16:["D8"],14:["D7"],12:["D6"],10:["D5"],8:["D4"],6:["D3"],4:["D2"],2:["D1"]};
 
 // ---------------------------------------------
 // CONSEILS DE SORTIE
-// Calcule les combinaisons sugg  r  es pour cl  turer
+// Calcule les combinaisons sugg  r  es pour clôturer
 // selon le score restant et le mode de fin
 // - Mode simple : trouve la combo la plus rapide et la plus simple
 // - Mode double/master : utilise la base CHECKOUTS
@@ -743,7 +745,7 @@ function getCheckout(score,fin){
 // ======================================================
 // ---------------------------------------------
 // CONSTANTES   QUIPES
-// Couleurs et noms par d  faut des   quipes
+// Couleurs et noms par défaut des équipes
 // ---------------------------------------------
 const TCOLS=['#e8c547','#4799e8','#47c47e','#e85447'];
 const TNAMES=['  quipe A','  quipe B','  quipe C','  quipe D'];
@@ -754,7 +756,7 @@ const TNAMES=['  quipe A','  quipe B','  quipe C','  quipe D'];
 // ---------------------------------------------
 // CONFIGURATION FIREBASE
 // Remplacez ces valeurs par celles de votre projet Firebase
-// (console.firebase.google.com -> Param  tres -> Vos applications)
+// (console.firebase.google.com -> Paramètres -> Vos applications)
 // ---------------------------------------------
 const FIREBASE_CFG = {
   apiKey: "AIzaSyDjBwqUnR7B3u1OfCWykdhA7wRGTq6J6Tc",
@@ -786,7 +788,7 @@ function openSyncScreen(){
   if(savedCode){
     sub.innerHTML = 'Connect      la session <strong style="color:var(--accent)">'+savedCode+'</strong>.<br>Modifiez le code pour changer de session.';
   } else {
-    sub.innerHTML = 'Choisissez un code unique pour votre session.<br>Entrez le m  me code sur chaque appareil<br>pour partager vos statistiques.';
+    sub.innerHTML = 'Choisissez un code unique pour votre session.<br>Entrez le même code sur chaque appareil<br>pour partager vos statistiques.';
   }
 }
 
@@ -836,8 +838,8 @@ async function connectSync(){
 // ---------------------------------------------
 // ======================================================
 // SYNC     Strat  gie : un seul document "stats" avec timestamp
-// La derni  re   criture (timestamp le plus r  cent) gagne toujours
-// Suppression =   criture avec donn  es vides + timestamp r  cent
+// La derni  re écriture (timestamp le plus r  cent) gagne toujours
+// Suppression = écriture avec donn  es vides + timestamp r  cent
 // ======================================================
 
 // ======================================================
@@ -1020,7 +1022,7 @@ function recordTurnStat(playerName, turnTotal){
   saveStats(s);
 }
 // Enregistre le r  sultat d'une partie pour un joueur
-// won=true -> Victoire, notClosed=true -> NC (non cl  tur  ), sinon -> D  faite
+// won=true -> Victoire, notClosed=true -> NC (non clôtur  ), sinon -> D  faite
 // Prot  g   contre les doubles enregistrements (gs.statsRecorded)
 function recordGameStat(playerName, won, dartsUsed, members=null, realPtsThisGame=0, notClosed=false, checkoutDartsUsed=0){
   const recordKey = playerName;
@@ -1038,7 +1040,7 @@ function recordGameStat(playerName, won, dartsUsed, members=null, realPtsThisGam
     if(won)p.wins=(p.wins||0)+1;
     if(notClosed)p.nc=(p.nc||0)+1;
   }
-  // closingDarts = fl  chettes en zone checkout (<=170), seulement si cl  tur  
+  // closingDarts = fl  chettes en zone checkout (<=170), seulement si clôtur  
   if(!notClosed && checkoutDartsUsed>0)p.closingDarts=[...(p.closingDarts||[]),checkoutDartsUsed];
   if(members&&members.length) p.members=members;
   // Stats de la derni  re partie
@@ -1104,8 +1106,8 @@ function updateResumeBar(){
 }
 
 // Enregistre les stats de fin de partie pour tous les joueurs
-// winner = index du 1er ayant cl  tur   (finishOrder[0]) ou -1
-// closedIdx = liste des indices ayant cl  tur   (finishOrder)
+// winner = index du 1er ayant clôtur   (finishOrder[0]) ou -1
+// closedIdx = liste des indices ayant clôtur   (finishOrder)
 // Enregistre les stats de fin de partie pour TOUS les joueurs
 // Appel   depuis showFinalRanking et confirmEndGame
 function recordAllGameStats(){
@@ -1125,7 +1127,7 @@ function recordAllGameStats(){
       const isWinner = i===winnerId;
       const closed   = closedSet.has(i);
       const nc       = !closed;
-      // D = cl  tur   mais pas gagnant; NC = pas cl  tur  
+      // D = clôturé mais pas gagnant; NC = pas clôtur  
       const realPts  = t.members.reduce((s,m)=>s+getRealPts(m),0);
       recordGameStat(
         t.name, isWinner, t.dartsThisGame||0, t.members,
@@ -1293,9 +1295,9 @@ function cleanupCricket(){
 }
 
 // Bouton "Terminer" pendant la partie
-// Enregistre les stats (NC pour les non-cl  tur  s) et retourne au menu
+// Enregistre les stats (NC pour les non-clôturés) et retourne au menu
 function confirmEndGame(){
-  if(!confirm('Terminer la partie ? Les joueurs non cl  tur  s seront compt  s NC.')) return;
+  if(!confirm('Terminer la partie ? Les joueurs non clôturés seront comptés NC.')) return;
   // En solo : sauvegarder les stats avant de quitter
   if(gs.isSolo){
     saveStats(loadStatsLocal());
@@ -1336,7 +1338,7 @@ function confirmEndGame(){
 
 // Retour au menu principal
 // force=false -> partie mise en pause (bouton     pendant la partie)
-// force=true  -> abandon d  finitif (bouton Menu sur   cran victoire)
+// force=true  -> abandon d  finitif (bouton Menu sur écran victoire)
 function backToSetup(force=false){
   document.getElementById('win-screen').style.display='none';
   document.querySelector('.bottom-nav').style.display='';
@@ -1347,12 +1349,12 @@ function backToSetup(force=false){
     navTo('setup');
     return;
   }
-  // Force depuis win-screen (bouton "Menu") = enregistrer stats des non-cl  tur  s
+  // Force depuis win-screen (bouton "Menu") = enregistrer stats des non-clôturés
   // Force depuis banni  re "Abandon" = partie abandonn  e, aucune stat
-  // On distingue les deux cas : si finishOrder a des entr  es = quelqu'un a cl  tur   = vrai abandon post-victoire
+  // On distingue les deux cas : si finishOrder a des entr  es = quelqu'un a clôturé = vrai abandon post-victoire
   const someoneFinished = gs && gs.finishOrder && gs.finishOrder.length > 0;
   if(force && gameActive && gs && (gs.players||gs.teams) && someoneFinished){
-    // Quelqu'un a cl  tur   -> enregistrer NC pour les autres
+    // Quelqu'un a clôturé -> enregistrer NC pour les autres
     const winnerId = gs.finishOrder[0];
     if(gs.isTeam){
       gs.teams.forEach((t,i)=>{
@@ -1377,7 +1379,7 @@ function backToSetup(force=false){
       });
     }
   }
-  // Si personne n'a cl  tur   (abandon pur) -> annuler les stats accumul  es pendant la partie
+  // Si personne n'a clôturé (abandon pur) -> annuler les stats accumul  es pendant la partie
   if(force && gameActive && gs && !someoneFinished){
     // Annuler realPoints et totalDarts accumul  s pendant cette partie abandonn  e
     const s = loadStatsLocal();
@@ -1454,7 +1456,7 @@ makePills('teamCounts','numTeams');
 makePills('finModes','fin');
 buildNames();
 
-// Bascule entre mode Individuel et mode   quipes
+// Bascule entre mode Individuel et mode équipes
 // Affiche/masque les sections correspondantes
 // Adapte l'interface selon le mode choisi
 // En Cricket : masque la section Fin de manche
@@ -1465,7 +1467,7 @@ function updateSetupForMode(){
   if(finSection && finSection.closest('.setup-section')){
     finSection.closest('.setup-section').style.display = isCricket ? 'none' : '';
   }
-  // En Cricket, remettre fin    'simple' pour   viter les bugs
+  // En Cricket, remettre fin    'simple' pour éviter les bugs
   if(isCricket) cfg.fin='simple';
 });
 }
@@ -1490,7 +1492,7 @@ function saveKnownPlayers(a){try{localStorage.setItem('fl_players',JSON.stringif
 function addKnownPlayer(name){
   if(!name||name.length<1)return;
   let a=loadKnownPlayers();
-  a=a.filter(n=>n!==name); //   viter doublons
+  a=a.filter(n=>n!==name); // éviter doublons
   a.unshift(name); // mettre en t  te
   if(a.length>30)a=a.slice(0,30);
   saveKnownPlayers(a);
@@ -1677,8 +1679,8 @@ function buildNames(){
 // ======================================================
 // ---------------------------------------------
 // D  MARRAGE D'UNE PARTIE
-// Initialise l'  tat du jeu selon la configuration
-// (mode solo/  quipes, nombre de joueurs, mode de fin)
+// Initialise l'état du jeu selon la configuration
+// (mode solo/équipes, nombre de joueurs, mode de fin)
 // ---------------------------------------------
 function startGame(){
   const isTeam=cfg.partyType!=='solo';
@@ -1733,7 +1735,7 @@ function startGame(){
 // les indicateurs de lancer et le clavier num  rique
 // ---------------------------------------------
 function renderGame(){
-  document.getElementById('modeBadge').textContent=gs.mode+'    '+gs.fin+(gs.isTeam?'      quipes':'');
+  document.getElementById('modeBadge').textContent=gs.mode+'    '+gs.fin+(gs.isTeam?'    équipes':'');
   if(gs.cricket){ renderCricket(); return; }
   gs.isTeam?renderSBTeams():renderSBSolo();
 
@@ -1761,7 +1763,7 @@ function renderGame(){
   document.getElementById('validateBtn').disabled=gs.throws.length===0;
 }
 
-// Rendu du scoreboard en mode   quipes
+// Rendu du scoreboard en mode équipes
 // Affiche le score, le score live (pendant la vol  e), les membres
 function renderSBTeams(){
   const sb=document.getElementById('scoreboard');sb.innerHTML='';
@@ -1858,7 +1860,7 @@ function setMult(m){gs.mult=m;[1,2,3].forEach(x=>document.getElementById('m'+x).
 // Appel      chaque appui sur un bouton du clavier
 // ---------------------------------------------
 function addThrow(n){
-  // Mode Cricket : logique enti  rement diff  rente
+  // Mode Cricket : logique enti  rement différente
   if(gs.cricket){ addThrowCricket(n); return; }
   if(gs.throws.length>=3)return;
   let pts=0,label='';
@@ -1894,7 +1896,7 @@ function addThrow(n){
     setTimeout(handleRoundEnd,120);
     return;
   }
-  // Bust imm  diat si score n  gatif (m  me en cours de vol  e)
+  // Bust imm  diat si score n  gatif (même en cours de vol  e)
   // Note : score===1 est g  r   en fin de tour (bust seulement en mode double/master)
   if(newScore<0){
     flash('Bust ! Score inchang   -> '+curScore(),'err');
@@ -1908,7 +1910,7 @@ function addThrow(n){
         saveStats(s);
       }
     });
-    // Annuler les darts compt  s
+    // Annuler les darts comptés
     const nDarts=gs.throws.length;
     if(gs.isTeam)gs.teams[gs.curTeam].dartsThisGame=Math.max(0,(gs.teams[gs.curTeam].dartsThisGame||nDarts)-nDarts);
     else gs.players[gs.cur].dartsThisGame=Math.max(0,(gs.players[gs.cur].dartsThisGame||nDarts)-nDarts);
@@ -2039,7 +2041,7 @@ function endTurn(){
 
 // Passe au joueur/  quipe suivant(e)
 // Sauvegarde le tour dans l'historique (pour le retour arri  re)
-// Saute les joueurs/  quipes d  j   cl  tur  s
+// Saute les joueurs/équipes d  j   clôturés
 function nextTurn(){
   // Sauvegarder le tour dans l'historique pour permettre le retour arri  re
   const pName=curPlayerName();
@@ -2075,8 +2077,8 @@ function nextTurn(){
 // ======================================================
 // FIN DE MANCHE
 // ======================================================
-// G  re la fin d'une manche (quand un joueur cl  ture)
-// D  cide si on affiche l'  cran de victoire ou si on continue
+// G  re la fin d'une manche (quand un joueur clôture)
+// D  cide si on affiche l'écran de victoire ou si on continue
 function handleRoundEnd(){
   if(gs.isSolo){ saveStats(loadStatsLocal()); }
   const multi=gs.isTeam?gs.teams.length>1:gs.players.length>1;
@@ -2110,8 +2112,8 @@ function showFinalRanking(){
   if(gs.isTeam){
     gs.teams.forEach((t,i)=>{
       if(i===winnerId) return; // gagnant d  j   enregistr  
-      const closed = gs.finishOrder.includes(i); // a cl  tur   mais pas 1er = D
-      const nc = !closed; // n'a pas cl  tur   = NC
+      const closed = gs.finishOrder.includes(i); // a clôturé mais pas 1er = D
+      const nc = !closed; // n'a pas clôturé = NC
       const realPts = t.members.reduce((s,m)=>{
         const prev=(gs.realPtsBefore&&gs.realPtsBefore[m])||0;
         const cur=(loadStatsLocal()[m]||{}).realPoints||0;
@@ -2144,11 +2146,11 @@ function showFinalRanking(){
 }
 
 // Affiche les stats de la partie qui vient de se terminer
-// (sur l'  cran de victoire)
+// (sur l'écran de victoire)
 function renderWinGameStats(){
   const el=document.getElementById('win-game-stats');
   if(!el)return;
-  // Collecter les joueurs de la partie (solo uniquement pour l'instant,   quipes = membres)
+  // Collecter les joueurs de la partie (solo uniquement pour l'instant, équipes = membres)
   let playerList=[];
   if(gs.isTeam){
     gs.teams.forEach(t=>t.members.forEach(m=>playerList.push(m)));
@@ -2163,7 +2165,7 @@ function renderWinGameStats(){
   let html=`<div class="wgs-title">     Stats de cette partie</div><div class="wgs-grid">`;
   available.forEach(name=>{
     const p=stats[name];
-    // Fl  chettes de cette game = dartsThisGame stock   dans gs
+    // Flèchettes de cette game = dartsThisGame stock   dans gs
     let dartsGame=0;
     if(gs.isTeam){
       gs.teams.forEach(t=>{if(t.members.includes(name))dartsGame+=t.dartsThisGame||0;});
@@ -2176,9 +2178,9 @@ function renderWinGameStats(){
     const avgClose=closes.length?Math.round(closes.reduce((a,b)=>a+b,0)/closes.length):null;
     html+=`<div class="wgs-card">
       <div class="wgs-name">${name}</div>
-      <div class="wgs-label">Fl  chettes cette partie</div>
+      <div class="wgs-label">Flèchettes cette partie</div>
       <div class="wgs-val">${dartsGame}</div>
-      <div class="wgs-sub">Moy. cl  ture : ${avgClose!==null?avgClose+'F':'   '}    ${avgPD}pts/F</div>
+      <div class="wgs-sub">Moy. clôture : ${avgClose!==null?avgClose+'F':'   '}    ${avgPD}pts/F</div>
     </div>`;
   });
   html+=`</div>`;
@@ -2213,7 +2215,7 @@ function renderWinTable(){
   });
 }
 
-// Continue la partie pour les joueurs qui n'ont pas encore cl  tur  
+// Continue la partie pour les joueurs qui n'ont pas encore clôtur  
 // Appel   depuis le bouton "Laisser les autres finir"
 function continueRound(){
   document.querySelector('.bottom-nav').style.display='';
@@ -2233,7 +2235,7 @@ function continueRound(){
   renderGame();
 }
 
-// Rejoue avec les m  mes joueurs, remet les scores    z  ro
+// Rejoue avec les mêmes joueurs, remet les scores    z  ro
 function replayGame(){
   clearGameState();
   if(gs) gs.statsRecorded = new Set();
@@ -2290,7 +2292,7 @@ async function renderStats(){
   const avgPerDart=totalDarts?Math.round(realPoints/totalDarts*10)/10:0;
   const winRate=games?Math.round(wins/games*100):0;
 
-  // top num  ros touch  s
+  // top numéros touch  s
   const hits=p.numberHits||{};
   // Calculer les points r  els de chaque cl   pour le tri
   function hitPts(key){
@@ -2327,7 +2329,7 @@ async function renderStats(){
   let html=`<div class="stat-grid">
     ${!isSoloPlayer?`<div class="stat-card"><div class="sc-label">Parties jou  es</div><div class="sc-val">${games}</div><div class="sc-sub">${wins}V    ${games-wins-(p.nc||0)}D    ${p.nc||0}NC</div></div>`:''}
     ${!isSoloPlayer?`<div class="stat-card"><div class="sc-label">Taux de victoire</div><div class="sc-val">${winRate}%</div><div class="sc-sub">sur ${games} partie${games>1?'s':''}</div></div>`:''}
-    <div class="stat-card"><div class="sc-label">Fl  chettes / cl  ture</div><div class="sc-val">${avgClose!==null?avgClose:'   '}</div><div class="sc-sub">${closingDarts.length} cl  ture${closingDarts.length>1?'s':''}</div></div>
+    <div class="stat-card"><div class="sc-label">Flèchettes / clôture</div><div class="sc-val">${avgClose!==null?avgClose:'   '}</div><div class="sc-sub">${closingDarts.length} clôture${closingDarts.length>1?'s':''}</div></div>
     ${!isTeamStat?`<div class="stat-card"><div class="sc-label">Points / fl  chette</div><div class="sc-val">${avgPerDart}</div><div class="sc-sub">toutes parties</div></div>`:''}
     ${!isTeamStat?`<div class="stat-card"><div class="sc-label">Derni  re partie</div><div class="sc-val">${lastAvg!==null?lastAvg:'   '}</div><div class="sc-sub">pts/fl  chette</div></div>`:''}
     ${!isTeamStat?`<div class="stat-card"><div class="sc-label">     Meilleure partie</div><div class="sc-val" style="color:var(--accent)">${bestAvg!==null?bestAvg:'   '}</div><div class="sc-sub">pts/fl  chette</div></div>`:''}
@@ -2463,21 +2465,21 @@ function launchConfetti(){
 // ======================================================
 // PLEIN   CRAN
 // ======================================================
-// Bascule entre mode plein   cran et mode normal
+// Bascule entre mode plein écran et mode normal
 function toggleFullscreen(){
   if(!document.fullscreenElement && !document.webkitFullscreenElement){
-    // Entrer en plein   cran
+    // Entrer en plein écran
     const el = document.documentElement;
     if(el.requestFullscreen) el.requestFullscreen().catch(()=>{});
     else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen();
   } else {
-    // Quitter le plein   cran
+    // Quitter le plein écran
     if(document.exitFullscreen) document.exitFullscreen().catch(()=>{});
     else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
   }
 }
 
-// Met    jour l'ic  ne des boutons plein   cran
+// Met    jour l'ic  ne des boutons plein écran
 function updateFullscreenBtns(){
   const isFs=!!(document.fullscreenElement||document.webkitFullscreenElement);
   const icon = isFs ? '   ' : '   ';
@@ -2487,7 +2489,7 @@ function updateFullscreenBtns(){
   });
 }
 
-//   couter les changements de plein   cran (bouton retour, etc.)
+//   couter les changements de plein écran (bouton retour, etc.)
 document.addEventListener('fullscreenchange', updateFullscreenBtns);
 document.addEventListener('webkitfullscreenchange', updateFullscreenBtns);
 
@@ -2523,7 +2525,7 @@ function toggleTheme(){
 // ======================================================
 // ---------------------------------------------
 // PERSISTANCE DE LA PARTIE EN COURS
-// Sauvegarde l'  tat du jeu en localStorage
+// Sauvegarde l'état du jeu en localStorage
 // pour pouvoir reprendre si l'app est ferm  e
 // ---------------------------------------------
 function saveGameState(){
