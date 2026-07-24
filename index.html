@@ -2392,12 +2392,18 @@ function updateRotationBtns(){
 }
 
 // Restaurer la préférence de rotation au démarrage
+// et verrouiller portrait par défaut (bloque la rotation auto)
 (function initRotation(){
   const saved = localStorage.getItem('fl_rotation');
-  if(saved === 'landscape' && screen.orientation && screen.orientation.lock){
-    screen.orientation.lock('landscape').catch(()=>{});
-    setTimeout(updateRotationBtns, 100);
+  if(screen.orientation && screen.orientation.lock){
+    if(saved === 'landscape'){
+      screen.orientation.lock('landscape').catch(()=>{});
+    } else {
+      // Verrouiller portrait pour bloquer la rotation automatique
+      screen.orientation.lock('portrait').catch(()=>{});
+    }
   }
+  setTimeout(updateRotationBtns, 100);
 })();
 
 function updateFullscreenBtns(){
@@ -2553,12 +2559,12 @@ function renderCricket(){
     html+='<div class="cricket-player'+(i===cur?' active-col':'')+'">'+p.name+'</div>';
   });
   html+='</div>';
-  var cz=gs.cricketZones||[20,19,18,17,16,15,25];
+  var cz=[20,19,18,17,16,15,25];
   cz.forEach(function(zone){
     html+='<div class="cricket-row" style="display:grid;grid-template-columns:'+gc+';gap:8px">';
     html+='<div class="cricket-zone">'+(zone===25?'Bull':zone)+'</div>';
     players.forEach(function(p){
-      var hits=p.cricket[zone]||0;
+      var hits=p.cricket[parseInt(zone)]||0;
       if(hits>=3){html+='<div class="cricket-done">✓</div>';}
       else{html+='<div class="cricket-marks">';for(var m=1;m<=3;m++)html+='<div class="cricket-mark'+(hits>=m?' hit':'')+'"></div>';html+='</div>';}
     });
@@ -2603,13 +2609,20 @@ function addThrowCricket(val){
   recordThrowStat(p.name,label,0);
   if(gs.isTeam)gs.teams[cur].dartsThisGame=(gs.teams[cur].dartsThisGame||0)+1;
   else gs.players[cur].dartsThisGame=(gs.players[cur].dartsThisGame||0)+1;
-  var czones=gs.cricketZones||[20,19,18,17,16,15,25];
-  if(val!==0&&czones.indexOf(val)>=0&&(p.cricket[val]||0)<3){
-    p.cricket[val]=Math.min(3,(p.cricket[val]||0)+mult);
+  var czones=[20,19,18,17,16,15,25];
+  if(val!==0&&czones.indexOf(parseInt(val))>=0&&(p.cricket[parseInt(val)]||0)<3){
+    p.cricket[parseInt(val)]=Math.min(3,(p.cricket[parseInt(val)]||0)+mult);
   }
   gs.mult=1;
-  var zones=gs.cricketZones||[20,19,18,17,16,15,25];
-  var won=zones.every(function(z){return (p.cricket[z]||0)>=3;});
+  var zones=[20,19,18,17,16,15,25];
+  var won=false;
+  if(p.cricket){
+    var allClosed=true;
+    for(var zi=0;zi<zones.length;zi++){
+      if((p.cricket[zones[zi]]||0)<3){allClosed=false;break;}
+    }
+    won=allClosed;
+  }
   if(won){
     gs.finishOrder.push(cur);
     recordGameStat(p.name,true,p.dartsThisGame||0);
