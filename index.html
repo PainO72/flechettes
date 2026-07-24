@@ -513,6 +513,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
   <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 20px 0">
     <div style="display:flex;gap:6px">
       <button id="fullscreenBtnSetup" onclick="toggleFullscreen()" style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:18px;cursor:pointer;line-height:1" title="Plein écran">⛶</button>
+      <button id="rotationBtnSetup" onclick="toggleRotation()" style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:18px;cursor:pointer;line-height:1" title="Rotation">⟳</button>
       <button id="themeBtn" onclick="toggleTheme()" style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:18px;cursor:pointer;line-height:1">☀️</button>
     </div>
     <div class="sync-badge" id="syncBadge" onclick="openSyncScreen()">
@@ -587,6 +588,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
     <div style="display:flex;gap:6px;align-items:center">
       <button onclick="confirmEndGame()" style="background:rgba(232,84,71,.12);border:1px solid rgba(232,84,71,.35);border-radius:20px;padding:5px 12px;font-family:var(--mono);font-size:11px;font-weight:600;color:var(--red);cursor:pointer;line-height:1">Terminer</button>
       <button id="fullscreenBtn" onclick="toggleFullscreen()" style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 10px;font-size:16px;cursor:pointer;line-height:1" title="Plein écran">⛶</button>
+      <button id="rotationBtn" onclick="toggleRotation()" style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 10px;font-size:16px;cursor:pointer;line-height:1" title="Rotation">⟳</button>
       <button id="themeBtnGame" onclick="toggleTheme()" style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 10px;font-size:16px;cursor:pointer;line-height:1">☀️</button>
     </div>
   </div>
@@ -2361,6 +2363,43 @@ function toggleFullscreen(){
 }
 
 // Met à jour l'icône des boutons plein écran
+// Bascule la rotation de l'écran (portrait <-> paysage)
+function toggleRotation(){
+  const isLocked = localStorage.getItem('fl_rotation') === 'landscape';
+  if(isLocked){
+    // Revenir en portrait
+    if(screen.orientation && screen.orientation.lock){
+      screen.orientation.lock('portrait').catch(()=>{});
+    }
+    localStorage.setItem('fl_rotation','portrait');
+  } else {
+    // Passer en paysage
+    if(screen.orientation && screen.orientation.lock){
+      screen.orientation.lock('landscape').catch(()=>{});
+    }
+    localStorage.setItem('fl_rotation','landscape');
+  }
+  updateRotationBtns();
+}
+
+function updateRotationBtns(){
+  const isLandscape = localStorage.getItem('fl_rotation') === 'landscape';
+  const icon = isLandscape ? '⟲' : '⟳';
+  ['rotationBtn','rotationBtnSetup'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el){ el.textContent = icon; el.style.background = isLandscape ? 'var(--accent)' : 'var(--surface)'; el.style.color = isLandscape ? '#0a0a0c' : ''; }
+  });
+}
+
+// Restaurer la préférence de rotation au démarrage
+(function initRotation(){
+  const saved = localStorage.getItem('fl_rotation');
+  if(saved === 'landscape' && screen.orientation && screen.orientation.lock){
+    screen.orientation.lock('landscape').catch(()=>{});
+    setTimeout(updateRotationBtns, 100);
+  }
+})();
+
 function updateFullscreenBtns(){
   const isFs=!!(document.fullscreenElement||document.webkitFullscreenElement);
   const icon = isFs ? '⛿' : '⛶';
@@ -2495,11 +2534,12 @@ function updateGameMode(){
 }
 
 function initCricketState(){
-  var CZ=CRICKET_ZONES;
-  function ic(){var o={};CZ.forEach(function(z){o[z]=0;});return o;}
+  var CZ=[20,19,18,17,16,15,25];
+  function ic(){return {20:0,19:0,18:0,17:0,16:0,15:0,25:0};}
   if(gs.isTeam)gs.teams.forEach(function(t){t.cricket=ic();});
   else gs.players.forEach(function(p){p.cricket=ic();});
   gs.isCricket=true;
+  gs.cricketZones=CZ;
 }
 
 function renderCricket(){
@@ -2513,7 +2553,8 @@ function renderCricket(){
     html+='<div class="cricket-player'+(i===cur?' active-col':'')+'">'+p.name+'</div>';
   });
   html+='</div>';
-  CRICKET_ZONES.forEach(function(zone){
+  var cz=gs.cricketZones||[20,19,18,17,16,15,25];
+  cz.forEach(function(zone){
     html+='<div class="cricket-row" style="display:grid;grid-template-columns:'+gc+';gap:8px">';
     html+='<div class="cricket-zone">'+(zone===25?'Bull':zone)+'</div>';
     players.forEach(function(p){
@@ -2562,11 +2603,13 @@ function addThrowCricket(val){
   recordThrowStat(p.name,label,0);
   if(gs.isTeam)gs.teams[cur].dartsThisGame=(gs.teams[cur].dartsThisGame||0)+1;
   else gs.players[cur].dartsThisGame=(gs.players[cur].dartsThisGame||0)+1;
-  if(val!==0&&CRICKET_ZONES.indexOf(val)>=0&&p.cricket[val]<3){
+  var czones=gs.cricketZones||[20,19,18,17,16,15,25];
+  if(val!==0&&czones.indexOf(val)>=0&&(p.cricket[val]||0)<3){
     p.cricket[val]=Math.min(3,(p.cricket[val]||0)+mult);
   }
   gs.mult=1;
-  var won=CRICKET_ZONES.every(function(z){return p.cricket[z]>=3;});
+  var zones=gs.cricketZones||[20,19,18,17,16,15,25];
+  var won=zones.every(function(z){return (p.cricket[z]||0)>=3;});
   if(won){
     gs.finishOrder.push(cur);
     recordGameStat(p.name,true,p.dartsThisGame||0);
