@@ -480,16 +480,16 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 .hist-score{font-family:var(--mono);font-size:13px;color:var(--text)}
 .hist-score span{color:var(--muted);font-size:11px}
 .stat-section-label{padding:0 20px 8px;font-size:10px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px}
-.cricket-board{padding:8px 16px;display:flex;flex-direction:column;gap:6px}
+.cricket-board{padding:0 16px;display:flex;flex-direction:column;gap:3px}
 .cricket-row{display:grid;align-items:center;background:var(--surface);border-radius:10px;padding:8px 12px;gap:8px}
 .cricket-zone{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--accent);text-align:center}
 .cricket-marks{display:flex;gap:4px;align-items:center;justify-content:center}
 .cricket-mark{width:18px;height:18px;border-radius:50%;border:2px solid var(--border2);transition:all .2s}
 .cricket-mark.hit{border-color:var(--accent);background:var(--accent)}
 .cricket-done{color:var(--green);font-size:16px;text-align:center}
-.cricket-player{font-family:var(--mono);font-size:11px;font-weight:600;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.cricket-player.active-col{color:var(--accent)}
-.cricket-numpad{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px 16px}
+.cricket-player{font-family:var(--sans);font-size:11px;font-weight:600;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);letter-spacing:.3px;text-transform:uppercase;padding:2px}
+.cricket-player.active-col{color:var(--text);font-size:13px;font-weight:700;background:rgba(240,201,58,.1);border-radius:6px;padding:3px 4px}
+.cricket-numpad{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:2px 16px 12px}
 .cricket-numpad .cnb{border-radius:12px;padding:14px 0;font-family:var(--mono);font-size:18px;font-weight:700;background:var(--surface);border:1px solid var(--border);color:var(--text);cursor:pointer;text-align:center;transition:background .1s}
 .cricket-numpad .cnb.bull{color:var(--accent)}
 .cricket-numpad .cnb.mult-active{background:var(--accent);color:#0a0a0c}
@@ -809,9 +809,9 @@ const TNAMES=['Équipe A','Équipe B','Équipe C','Équipe D'];
 // (console.firebase.google.com → Paramètres → Vos applications)
 // ─────────────────────────────────────────────
 const FIREBASE_CFG = {
-  apiKey: "AIzaSyDjBwqUnR7B3u1OfCWykdhA7wRGTq6J6Tc",
-  authDomain: "flechettes-d6ac1.firebaseapp.com",
-  projectId: "flechettes-d6ac1"
+  apiKey: "AIzaSyDemo-RemplacezParVotreCle",
+  authDomain: "flechettes-demo.firebaseapp.com",
+  projectId: "flechettes-demo"
 };
 // ⚠️ Ces valeurs DOIVENT être remplacées par les vôtres (voir INSTALLATION.md)
 // Tant qu'elles ne sont pas configurées, l'app fonctionne en local uniquement.
@@ -1036,6 +1036,7 @@ function emptyPlayer(){return{games:0,wins:0,nc:0,totalDarts:0,closingDarts:[],n
 // Enregistre les stats d'un lancer individuel
 // (zones touchées, points réels, nombre de fléchettes)
 function recordThrowStat(playerName, label, pts){
+  if(gs&&gs.isCricket)return; // pas de stats en Cricket
   const s=loadStatsLocal();
   // Si le joueur était marqué supprimé, on repart de zéro
   if(!s[playerName] || s[playerName]._deleted) s[playerName]=emptyPlayer();
@@ -1061,6 +1062,7 @@ function recordThrowStat(playerName, label, pts){
 // Enregistre les stats d'un tour complet (volée de 3 fléchettes)
 // Met à jour la meilleure volée si applicable
 function recordTurnStat(playerName, turnTotal){
+  if(gs&&gs.isCricket)return;
   const s=loadStatsLocal();
   if(!s[playerName] || s[playerName]._deleted) s[playerName]=emptyPlayer();
   const p=s[playerName];
@@ -1075,6 +1077,7 @@ function recordTurnStat(playerName, turnTotal){
 // won=true → Victoire, notClosed=true → NC (non clôturé), sinon → Défaite
 // Protégé contre les doubles enregistrements (gs.statsRecorded)
 function recordGameStat(playerName, won, dartsUsed, members=null, realPtsThisGame=0, notClosed=false, checkoutDartsUsed=0){
+  if(gs&&gs.isCricket)return;
   const recordKey = playerName;
   if(gs && gs.statsRecorded && gs.statsRecorded.has(recordKey)){
     return;
@@ -1945,13 +1948,18 @@ function nextTurn(){
   if(gs.isTeam){
     const ct=gs.teams[gs.curTeam];ct.memberIdx=(ct.memberIdx+1)%ct.members.length;
     let next=(gs.curTeam+1)%gs.teams.length,loops=0;
-    while(gs.teams[next].score===0&&loops<gs.teams.length){next=(next+1)%gs.teams.length;loops++;}
-    if(gs.teams.every(t=>t.score===0)){showFinalRanking();return;}
+    // En Cricket, score=0 est normal, on utilise finishOrder pour sauter les terminés
+    if(!gs.isCricket){
+      while(gs.teams[next].score===0&&loops<gs.teams.length){next=(next+1)%gs.teams.length;loops++;}
+      if(gs.teams.every(t=>t.score===0)){showFinalRanking();return;}
+    }
     gs.curTeam=next;
   } else {
     let next=(gs.cur+1)%gs.players.length,loops=0;
-    while(gs.players[next].score===0&&loops<gs.players.length){next=(next+1)%gs.players.length;loops++;}
-    if(gs.players.every(p=>p.score===0)){showFinalRanking();return;}
+    if(!gs.isCricket){
+      while(gs.players[next].score===0&&loops<gs.players.length){next=(next+1)%gs.players.length;loops++;}
+      if(gs.players.every(p=>p.score===0)){showFinalRanking();return;}
+    }
     gs.cur=next;
   }
   renderGame();
@@ -2110,8 +2118,10 @@ function continueRound(){
     gs.curTeam=next;
   } else {
     let next=(gs.cur+1)%gs.players.length,loops=0;
-    while(gs.players[next].score===0&&loops<gs.players.length){next=(next+1)%gs.players.length;loops++;}
-    if(gs.players.every(p=>p.score===0)){showFinalRanking();return;}
+    if(!gs.isCricket){
+      while(gs.players[next].score===0&&loops<gs.players.length){next=(next+1)%gs.players.length;loops++;}
+      if(gs.players.every(p=>p.score===0)){showFinalRanking();return;}
+    }
     gs.cur=next;
   }
   document.getElementById('win-screen').style.display='none';
@@ -2556,7 +2566,8 @@ function renderCricket(){
   var html='<div class="cricket-board">';
   html+='<div style="display:grid;grid-template-columns:'+gc+';gap:8px;padding:4px 12px"><div></div>';
   players.forEach(function(p,i){
-    html+='<div class="cricket-player'+(i===cur?' active-col':'')+'">'+p.name+'</div>';
+    var closed=[20,19,18,17,16,15,25].filter(function(z){return (p.cricket&&p.cricket[z]||0)>=3;}).length;
+    html+='<div class="cricket-player'+(i===cur?' active-col':'')+'">'+p.name+'<div style="font-size:10px;color:'+(i===cur?'var(--accent)':'var(--muted2)')+';margin-top:1px">'+closed+'/7</div></div>';
   });
   html+='</div>';
   var cz=[20,19,18,17,16,15,25];
@@ -2577,6 +2588,8 @@ function renderCricket(){
   document.getElementById('checkoutBox').style.display='none';
   var tl=document.querySelector('.throw-log');if(tl)tl.style.display='none';
   var nb=document.querySelector('.numpad');if(nb)nb.style.display='none';
+  var mr=document.querySelector('.mult-row');if(mr)mr.style.display='none';
+  var fl=document.querySelector('.flash-msg');if(fl)fl.style.marginTop='0';
   buildCricketNumpad();
 }
 
@@ -2591,7 +2604,8 @@ function buildCricketNumpad(){
     '<button class="cnb'+(m===3?' mult-active':'')+'" onclick="setCricketMult(3)">T</button>'+
     '<button class="cnb" style="color:var(--muted);font-size:13px" onclick="addThrowCricket(0)">Raté</button>'+
     [20,19,18,17,16,15].map(function(v){return '<button class="cnb" onclick="addThrowCricket('+v+')">'+v+'</button>';}).join('')+
-    '<button class="cnb bull" onclick="addThrowCricket(25)">Bull</button>';
+    '<button class="cnb bull" onclick="addThrowCricket(25)">B25</button>'+
+    '<button class="cnb bull" onclick="addThrowCricket(50)">B50</button>';
 }
 
 function setCricketMult(m){gs.mult=m;buildCricketNumpad();}
@@ -2602,18 +2616,21 @@ function addThrowCricket(val){
   var p=players[cur];
   var mult=gs.mult||1;
   var label='';
+  var touches=mult;
   if(val===0){label='Raté';}
-  else if(val===25){label=(mult===2?'D':mult===3?'T':'')+'Bull';}
+  else if(val===25){label='B25';touches=1;} // Bull simple = toujours 1 touche
+  else if(val===50){label='B50';touches=2;} // Bull double = toujours 2 touches
   else{label=(mult===1?'S':mult===2?'D':'T')+val;}
   gs.throws.push({label:label,pts:0});
   recordThrowStat(p.name,label,0);
   if(gs.isTeam)gs.teams[cur].dartsThisGame=(gs.teams[cur].dartsThisGame||0)+1;
   else gs.players[cur].dartsThisGame=(gs.players[cur].dartsThisGame||0)+1;
   var czones=[20,19,18,17,16,15,25];
-  if(val!==0&&czones.indexOf(parseInt(val))>=0&&(p.cricket[parseInt(val)]||0)<3){
-    p.cricket[parseInt(val)]=Math.min(3,(p.cricket[parseInt(val)]||0)+mult);
+  var targetZone=val===50?25:parseInt(val); // B50 pointe vers zone 25
+  if(val!==0&&czones.indexOf(targetZone)>=0&&(p.cricket[targetZone]||0)<3){
+    p.cricket[targetZone]=Math.min(3,(p.cricket[targetZone]||0)+touches);
   }
-  gs.mult=1;
+  if(val!==25&&val!==50)gs.mult=1; else gs.mult=1;
   var zones=[20,19,18,17,16,15,25];
   var won=false;
   if(p.cricket){
@@ -2639,6 +2656,7 @@ function cleanupCricket(){
   var tl=document.querySelector('.throw-log');if(tl)tl.style.display='';
   var nb=document.querySelector('.numpad');if(nb)nb.style.display='';
   var cb=document.getElementById('checkoutBox');if(cb)cb.style.display='';
+  var mr=document.querySelector('.mult-row');if(mr)mr.style.display='';
 }
 </script>
 </body>
