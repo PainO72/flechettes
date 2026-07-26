@@ -487,8 +487,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 .cricket-mark{width:18px;height:18px;border-radius:50%;border:2px solid var(--border2);transition:all .2s}
 .cricket-mark.hit{border-color:var(--accent);background:var(--accent)}
 .cricket-done{color:var(--green);font-size:16px;text-align:center}
-.cricket-player{font-family:var(--sans);font-size:11px;font-weight:600;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);letter-spacing:.3px;text-transform:uppercase;padding:2px}
-.cricket-player.active-col{color:var(--text);font-size:13px;font-weight:700;background:rgba(240,201,58,.1);border-radius:6px;padding:3px 4px}
+.cricket-player{font-family:var(--sans);font-size:13px;font-weight:700;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);letter-spacing:.3px;text-transform:uppercase;padding:4px 2px}
+.cricket-player.active-col{color:var(--text);font-size:15px;font-weight:700;background:rgba(240,201,58,.1);border-radius:6px;padding:4px}
 .cricket-numpad{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:2px 16px 12px}
 .cricket-numpad .cnb{border-radius:12px;padding:14px 0;font-family:var(--mono);font-size:18px;font-weight:700;background:var(--surface);border:1px solid var(--border);color:var(--text);cursor:pointer;text-align:center;transition:background .1s}
 .cricket-numpad .cnb.bull{color:var(--accent)}
@@ -809,9 +809,9 @@ const TNAMES=['Équipe A','Équipe B','Équipe C','Équipe D'];
 // (console.firebase.google.com → Paramètres → Vos applications)
 // ─────────────────────────────────────────────
 const FIREBASE_CFG = {
-  apiKey: "AIzaSyDemo-RemplacezParVotreCle",
-  authDomain: "flechettes-demo.firebaseapp.com",
-  projectId: "flechettes-demo"
+  apiKey: "AIzaSyDjBwqUnR7B3u1OfCWykdhA7wRGTq6J6Tc",
+  authDomain: "flechettes-d6ac1.firebaseapp.com",
+  projectId: "flechettes-d6ac1"
 };
 // ⚠️ Ces valeurs DOIVENT être remplacées par les vôtres (voir INSTALLATION.md)
 // Tant qu'elles ne sont pas configurées, l'app fonctionne en local uniquement.
@@ -2585,11 +2585,13 @@ function renderCricket(){
   html+=gs.throws.length>0?gs.throws.map(function(t){return t.label;}).join(' · '):'Tour de <span style="color:var(--accent)">'+players[cur].name+'</span>';
   html+='</div></div>';
   document.getElementById('scoreboard').innerHTML=html;
+  document.getElementById('scoreboard').style.marginBottom='0';
+  document.getElementById('scoreboard').style.paddingBottom='0';
   document.getElementById('checkoutBox').style.display='none';
   var tl=document.querySelector('.throw-log');if(tl)tl.style.display='none';
   var nb=document.querySelector('.numpad');if(nb)nb.style.display='none';
   var mr=document.querySelector('.mult-row');if(mr)mr.style.display='none';
-  var fl=document.querySelector('.flash-msg');if(fl)fl.style.marginTop='0';
+  var fl=document.querySelector('.flash-msg');if(fl){fl.style.marginTop='0';fl.style.minHeight='0';fl.style.padding='0';}
   buildCricketNumpad();
 }
 
@@ -2657,6 +2659,8 @@ function cleanupCricket(){
   var nb=document.querySelector('.numpad');if(nb)nb.style.display='';
   var cb=document.getElementById('checkoutBox');if(cb)cb.style.display='';
   var mr=document.querySelector('.mult-row');if(mr)mr.style.display='';
+  var sb=document.getElementById('scoreboard');if(sb){sb.style.marginBottom='';sb.style.paddingBottom='';}
+  var fl=document.querySelector('.flash-msg');if(fl){fl.style.marginTop='';fl.style.minHeight='';fl.style.padding='';}
 }
 </script>
 </body>
