@@ -2134,11 +2134,33 @@ function replayGame(){
   if(gs) gs.statsRecorded = new Set();
   document.getElementById('win-screen').style.display='none';
   document.querySelector('.bottom-nav').style.display='';
-  if(gs.isTeam)gs.teams.forEach(t=>{t.score=gs.mode;t.finishRank=null;t.memberIdx=0;t.dartsThisGame=0;});
-  else gs.players.forEach(p=>{p.score=gs.mode;p.finishRank=null;p.dartsThisGame=0;});
-  if(gs.isTeam)gs.curTeam=0;else gs.cur=0;
+
+  // Inverser l'ordre complet : gagnant joue en dernier, NC jouent avant les gagnants
+  const prevFinish = [...(gs.finishOrder||[])];
+  const total = gs.isTeam ? gs.teams.length : gs.players.length;
+  // NC = joueurs non dans finishOrder → ils sont "derniers" du classement
+  const notFinished = [];
+  for(let i=0;i<total;i++){ if(!prevFinish.includes(i)) notFinished.push(i); }
+  // Classement complet : [1er, 2eme, ..., NC...] → inversé : [NC..., ..., 2eme, 1er]
+  const fullOrder = [...prevFinish].concat(notFinished);
+  const newOrder = [...fullOrder].reverse();
+
+  if(gs.isTeam){
+    const oldTeams = [...gs.teams];
+    gs.teams = newOrder.map(i => oldTeams[i]);
+    gs.teams.forEach(t=>{t.score=gs.isCricket?0:gs.mode;t.finishRank=null;t.memberIdx=0;t.dartsThisGame=0;t.checkoutDarts=0;if(gs.isCricket){var o={};[20,19,18,17,16,15,25].forEach(function(z){o[z]=0;});t.cricket=o;}});
+    gs.curTeam=0;
+  } else {
+    const oldPlayers = [...gs.players];
+    gs.players = newOrder.map(i => oldPlayers[i]);
+    gs.players.forEach(p=>{p.score=gs.isCricket?0:gs.mode;p.finishRank=null;p.dartsThisGame=0;p.checkoutDarts=0;if(gs.isCricket){var o={};[20,19,18,17,16,15,25].forEach(function(z){o[z]=0;});p.cricket=o;}});
+    gs.cur=0;
+  }
+
   gs.throws=[];gs.mult=1;gs.finishOrder=[];
-  document.getElementById('win-screen').style.display='none';
+  gs.turnHistory=[];
+  gameActive=true;
+  saveGameState();
   renderGame();
 }
 
