@@ -2587,17 +2587,24 @@ function renderCricket(){
   document.getElementById('scoreboard').innerHTML=html;
   document.getElementById('scoreboard').style.marginBottom='0';
   document.getElementById('scoreboard').style.paddingBottom='0';
+  document.getElementById('scoreboard').style.paddingTop='4px';
   document.getElementById('checkoutBox').style.display='none';
   var tl=document.querySelector('.throw-log');if(tl)tl.style.display='none';
   var nb=document.querySelector('.numpad');if(nb)nb.style.display='none';
   var mr=document.querySelector('.mult-row');if(mr)mr.style.display='none';
-  var fl=document.querySelector('.flash-msg');if(fl){fl.style.marginTop='0';fl.style.minHeight='0';fl.style.padding='0';}
+  var fl=document.querySelector('.flash-msg');if(fl){fl.style.display='none';}
+  var kp=document.querySelector('.keypad');if(kp)kp.style.display='none';
   buildCricketNumpad();
 }
 
 function buildCricketNumpad(){
   var np=document.getElementById('cricket-numpad');
-  if(!np){np=document.createElement('div');np.id='cricket-numpad';np.className='cricket-numpad';document.getElementById('game-page').appendChild(np);}
+  if(!np){
+    np=document.createElement('div');np.id='cricket-numpad';np.className='cricket-numpad';
+    // Insérer juste après le scoreboard pour supprimer l'espace
+    var sb=document.getElementById('scoreboard');
+    sb.parentNode.insertBefore(np, sb.nextSibling);
+  }
   np.style.display='grid';
   var m=gs.mult||1;
   np.innerHTML=
