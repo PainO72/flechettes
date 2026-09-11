@@ -498,6 +498,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 .cricket-numpad .cnb{border-radius:12px;padding:14px 0;font-family:var(--mono);font-size:18px;font-weight:700;background:var(--surface);border:1px solid var(--border);color:var(--text);cursor:pointer;text-align:center;transition:background .1s}
 .cricket-numpad .cnb.bull{color:var(--accent)}
 .cricket-numpad .cnb.mult-active{background:var(--accent);color:#0a0a0c}
+.oh-putain-btn{background:rgba(232,84,71,.12)!important;border-color:rgba(232,84,71,.35)!important;color:var(--red)!important;font-size:12px!important}
+.nb.oh-putain-btn{grid-column:span 2;font-size:12px;background:rgba(232,84,71,.12);border:1px solid rgba(232,84,71,.35);color:var(--red);border-radius:12px;padding:12px 0;cursor:pointer;font-weight:600}
 .cz-pill{padding:8px 12px;border:1px solid var(--border2);border-radius:10px;background:var(--surface);color:var(--muted);font-family:var(--mono);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s}
 .cz-pill.active{background:var(--accent);border-color:var(--accent);color:#0a0a0c}
 .cricket-score{font-size:11px;color:var(--muted);margin-top:2px;font-family:var(--mono)}
@@ -1719,9 +1721,15 @@ function buildNumpad(){
     let cls='num-btn',label=n;
     if(n==='B25'){cls+=' bull';label='B25';}
     else if(n==='B50'){cls+=' dbull';label='Bull 50';}
-    else if(n===0||n==='0'){cls+=' miss';label=getMissLabel();}
+    else if(n===0||n==='0'){cls+=' miss';label='Raté';}
     b.className=cls;b.textContent=label;b.onclick=()=>addThrow(n);pad.appendChild(b);
   });
+  // Bouton Oh putain !
+  const ohBtn=document.createElement('button');
+  ohBtn.className='nb oh-putain-btn';
+  ohBtn.textContent='😱 Oh putain !';
+  ohBtn.onclick=()=>{playOhPutain();addThrow(0);};
+  pad.appendChild(ohBtn);
 }
 
 // ══════════════════════════════════════════════════════
@@ -1772,7 +1780,7 @@ function addThrow(n){
   let pts=0,label='';
   if(n==='B25'){pts=25;label='Bull 25';}
   else if(n==='B50'){pts=50;label='Bull 50';}
-  else if(n===0||n==='0'){pts=0;label=getMissLabel();if(label!=='Raté')playOhPutain();}
+  else if(n===0||n==='0'){pts=0;label='Raté';if(label!=='Raté')playOhPutain();}
   else{pts=n*gs.mult;const pfx=gs.mult===2?'D':gs.mult===3?'T':'S';label=pfx+n+(gs.mult>1?' ('+pts+')':'');}
   gs.throws.push({pts,label});
   // stats
@@ -2618,14 +2626,6 @@ function playOhPutain(){
   if(audio){ audio.currentTime=0; audio.play().catch(function(){}); }
 }
 
-function getMissLabel(){
-  var players = gs ? (gs.isTeam ? gs.teams.flatMap(function(t){return t.members;}) : gs.players.map(function(p){return p.name;})) : [];
-  var names = players.map(function(n){return n.toLowerCase().trim();});
-  var hasGuy = names.some(function(n){return n==='guy';});
-  var hasFred = names.some(function(n){return n==='fred';});
-  return (hasGuy && hasFred) ? 'oh putain' : 'Raté';
-}
-
 function updateGameMode(){
   var mode = cfg.mode;
   var isCricket = mode==='cricket'||mode==='cutthroat';
@@ -2684,7 +2684,7 @@ function addThrowCricket(val){
   var mult = gs.mult||1;
   var label='', touches=mult, zone=null;
 
-  if(val===0){ label=getMissLabel(); touches=0; if(label!=='Raté')playOhPutain(); }
+  if(val===0){ label='Raté'; touches=0; if(label!=='Raté')playOhPutain(); }
   else if(val===25){ label='B25'; zone=25; touches=1; } // Bull simple = 1
   else if(val===50){ label='B50'; zone=25; touches=2; } // Bull double = 2
   else { zone=parseInt(val); label=(mult===1?'S':mult===2?'D':'T')+zone; }
@@ -2842,6 +2842,7 @@ function buildCricketNumpad(){
   }
   // Raté en dernier
   zonesHtml+='<button class="cnb" style="color:var(--muted);font-size:13px" onclick="addThrowCricket(0)">Raté</button>';
+  zonesHtml+='<button class="cnb oh-putain-btn" onclick="playOhPutain();addThrowCricket(0);">😱 Oh putain !</button>';
 
   np.innerHTML=ctrl+zonesHtml;
 }
