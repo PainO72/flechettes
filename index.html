@@ -544,8 +544,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
         <div class="pill active" data-val="501">501</div>
         <div class="pill" data-val="301">301</div>
         <div class="pill" data-val="201">201</div>
-        <div class="pill" data-val="cricket">Cricket</div>
-        <div class="pill" data-val="cutthroat">Cut-Throat</div>
+        <div class="pill" data-val="cutthroat">Cricket</div>
       </div>
     </div>
     <!-- Zones Cricket : visible seulement en mode cricket/cutthroat -->
@@ -1606,7 +1605,7 @@ function startGame(){
       for(let p=0;p<ppt;p++){const v=document.getElementById(`pn${t}_${p}`)?.value.trim();members.push(v||`Joueur ${t*ppt+p+1}`);}
       const tNameVal=document.getElementById(`tn${t}`)?.value.trim();
       const tName=tNameVal||TNAMES[t];
-      teams.push({name:tName,color:TCOLS[t],members,score:(cfg.mode==='cricket'||cfg.mode==='cutthroat')?0:parseInt(cfg.mode)||501,legs:0,finishRank:null,memberIdx:0,dartsThisGame:0,checkoutDarts:0});
+      teams.push({name:tName,color:TCOLS[t],members,score:(cfg.mode==='cutthroat')?0:parseInt(cfg.mode)||501,legs:0,finishRank:null,memberIdx:0,dartsThisGame:0,checkoutDarts:0});
     }
     // Mémoriser les noms utilisés
     teams.forEach(t=>{addKnownTeam(t.name);t.members.forEach(m=>addKnownPlayer(m));});
@@ -1616,7 +1615,7 @@ function startGame(){
     for(let i=0;i<cfg.players;i++){const v=document.getElementById('pn'+i)?.value.trim();names.push(v||(cfg.players===1?'Vous':'Joueur '+(i+1)));}
     names.forEach(n=>addKnownPlayer(n));
     gs={mode:cfg.mode,fin:cfg.fin,isTeam:false,
-      players:names.map(n=>({name:n,score:(cfg.mode==='cricket'||cfg.mode==='cutthroat')?0:parseInt(cfg.mode)||501,legs:0,finishRank:null,dartsThisGame:0,checkoutDarts:0})),
+      players:names.map(n=>({name:n,score:(cfg.mode==='cutthroat')?0:parseInt(cfg.mode)||501,legs:0,finishRank:null,dartsThisGame:0,checkoutDarts:0})),
       cur:0,throws:[],mult:1,finishOrder:[]};
   }
   gameActive=true;
@@ -1629,7 +1628,7 @@ function startGame(){
   gs.realPtsBefore={};
   const pNames=gs.isTeam?gs.teams.flatMap(t=>t.members):gs.players.map(p=>p.name);
   pNames.forEach(n=>{gs.realPtsBefore[n]=(initStats[n]||{}).realPoints||0;});
-  if(cfg.mode==='cricket'||cfg.mode==='cutthroat')initCricketState();
+  if(cfg.mode==='cutthroat')initCricketState();
   navTo('game');
   renderGame();
 }
@@ -1674,14 +1673,21 @@ function renderGame(){
 // Affiche le score, le score live (pendant la volée), les membres
 function renderSBTeams(){
   const sb=document.getElementById('scoreboard');sb.innerHTML='';
+  const throwsTotal=gs.throws.reduce((s,t)=>s+t.pts,0);
   gs.teams.forEach((t,i)=>{
     const active=i===gs.curTeam,finished=t.score===0;
     const d=document.createElement('div');d.className='team-card'+(finished?' finished':'');
     if(active)d.style.borderColor=t.color;
     const bar=document.createElement('div');bar.className='tc-bar';bar.style.background=t.color;d.appendChild(bar);
     const mHtml=t.members.map((m,mi)=>`<span style="color:${active&&mi===t.memberIdx?t.color:'var(--muted)'};font-weight:${active&&mi===t.memberIdx?600:400}">${m}</span>`).join(' · ');
+    // Score live : seulement pour l'équipe active
+    const liveScore=active&&!finished&&gs.throws.length>0?t.score-throwsTotal:null;
+    const liveOk=liveScore!==null&&(liveScore>1||(liveScore===1&&gs.fin==='simple')||liveScore===0);
+    const liveHtml=active&&!finished&&gs.throws.length>0
+      ?`<div class="tc-live">${liveOk?liveScore:'✗ bust'}</div>`
+      :`<div class="tc-live"></div>`;
     const inner=document.createElement('div');
-    inner.innerHTML=`<div class="tc-name" style="color:${active?t.color:'var(--muted)'}">${t.name}</div><div class="tc-score" style="${finished?'color:var(--green)':''}">${finished?'✓':t.score}</div><div class="tc-legs">${t.legs} manche${t.legs!==1?'s':''}</div><div class="tc-members">${mHtml}</div>`;
+    inner.innerHTML=`<div class="tc-name" style="color:${active?t.color:'var(--muted)'}">${t.name}</div><div class="tc-score" style="${finished?'color:var(--green)':''}">${finished?'✓':t.score}</div>${liveHtml}<div class="tc-legs">${t.legs} manche${t.legs!==1?'s':''}</div><div class="tc-members">${mHtml}</div>`;
     d.appendChild(inner);sb.appendChild(d);
   });
 }
@@ -2642,7 +2648,7 @@ function initCricketState(){
   var CZ = selectedCricketZones.slice().sort(function(a,b){return b-a;});
   gs.cricketZones = CZ;
   gs.isCricket = true;
-  gs.isCutthroat = (cfg.mode==='cutthroat');
+  gs.isCutthroat = true; // mode Cricket = Cut-Throat
   function ic(){ var o={}; CZ.forEach(function(z){o[z]=0;}); return o; }
   function ip(){ var o={}; CZ.forEach(function(z){o[z]=0;}); return o; } // points par zone
   var players = gs.isTeam?gs.teams:gs.players;
@@ -2749,13 +2755,18 @@ function undoThrowCricket(){
   if(gs.cricketHistory.length===0){ flash('Impossible de revenir','err'); return; }
   var snap = JSON.parse(gs.cricketHistory.pop());
   var players = gs.isTeam?gs.teams:gs.players;
+  // Restaurer les zones et points de tous les joueurs
   snap.cricket.forEach(function(s,i){
-    players[i].cricket = s.c;
-    players[i].cricketPts = s.pts;
-    players[i].cricketTotal = s.tot;
+    if(players[i]){
+      players[i].cricket = s.c;
+      players[i].cricketPts = s.pts;
+      players[i].cricketTotal = s.tot;
+    }
   });
+  // Restaurer le joueur actif et la volée
+  if(gs.isTeam){ gs.curTeam = snap.cur; } else { gs.cur = snap.cur; }
   gs.throws = snap.throws;
-  gs.mult = snap.mult;
+  gs.mult = snap.mult||1;
   renderCricket();
   buildCricketNumpad();
 }
